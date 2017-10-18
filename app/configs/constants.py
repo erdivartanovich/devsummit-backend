@@ -51,12 +51,12 @@ VA_NUMBER = {
 }
 
 PAYPAL = {
-    'mode': "sandbox",
-    'client_id': "Ac-Ikn76GlVB5tFLwMoFYEl9FGumrB7NYdkicE5bd7Q_QfWmnKDyK_ZlZ7mFB-MlENIQR1fTvcj1Ivdv",
-    'client_secret': "EF23WB7s-mKixitheWRubig7O4JJmMTjmtRxX2xxMfVuarGceOWe8Uda47ORTdrCEshaKhLlmU4rZ1OT",
-    'payee': 'shi77.andy-facilitator@gmail.com',
-    'return_url': 'http://localhost:5000/payment/execute',
-    'cancel_url': 'http://localhost:5000/'
+    'mode': "live",
+    'client_id': "AV5yciJeTgKzD62m7kvePBtCWMIt66LkKc-fAV8oKh3EXY-WKnfZSZS-sLJbK-lEDYhbJpyGBwR673s5",
+    'client_secret': "ECcVoK_ngiZk5iZX2tysVVHpJvN9hSAxTRYwD2TkWEKOIs3xrVXfhxPloceCtDtm5s8hVQ31RTSbdl3x",
+    'payee': 'toopay@taufanaditya.com',
+    'return_url': 'https://api.devsummit.io/payment/execute',
+    'cancel_url': 'https://api.devsummit.io/'
 }
 
 MIDTRANS_API_BASE_URL = 'https://api.sandbox.midtrans.com/v2/'
