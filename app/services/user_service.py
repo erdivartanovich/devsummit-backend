@@ -120,6 +120,15 @@ class UserService(BaseService):
 		mail.send(email)
 		return True
 
+	def send_reset_password_email(self, user):
+		token = user.generate_auth_token(1800)
+		token = token.decode('utf-8')
+		email_subject = "Devsummit: Password Reset"
+		message = "<h4>You just tried to reset your password</h4><h4>Click here to change your password</h4><a href='%sreset-password?action=reset_password&token=%s'>%sreset-password?action=reset_password&token=%s</a>" %(request.url_root, token, request.url_root, token)
+		emailservice = EmailService()
+		email = emailservice.set_recipient(user.email).set_subject(email_subject).set_sender(current_app.config['MAIL_DEFAULT_SENDER']).set_html(message).build()
+		mail.send(email)
+		return True
 
 	def email_address_verification(self, token):
 		user = User.verify_auth_token(token)
@@ -164,35 +173,35 @@ class UserService(BaseService):
 						})
 					db.session.commit()
 				# checking referer add full day ticket if reach 10 counts
-			if referer.referal_count > 0:
-				referer_detail = db.session.query(User).filter_by(referal=user.referer).first().as_dict()
-				payload = {}
-				payload['user_id'] = referer_detail['id']
-				payload['ticket_id'] = 1						
-				receiver_id = referer_detail['id']
-				sender_id = 1
-				if referer_valid:
-					user_refcount = 1
-					user_havref = 1
-				else:
-					user_refcount = 0
-					user_havref = 0
-				current_user = db.session.query(User).filter_by(id=user.id)
-				current_user.update({
-					'referal_count' : user_refcount, 
-					'have_refered' : user_havref 
-				})
-				db.session.commit()
-				# only send notification if count less than 10
-				if referer.referal_count < 10:
-					type = "Referral Notification"
-					message = "%s has registered referring you, your total referals count is: %d" % (user.username, referer.referal_count)
-					FCMService().send_single_notification(type, message, receiver_id, sender_id)
-				# else count==10, send notif and create new ticket
-				elif referer.referal_count == 10:
-					type = "Free Ticket Notification"
-					message = "Congratulation! You have been referred 10 times! You've can get one free ticket, please click on claim button to claim your reward"
-					FCMService().send_single_notification(type, message, receiver_id, sender_id)
+				if referer.referal_count > 0:
+					referer_detail = db.session.query(User).filter_by(referal=user.referer).first().as_dict()
+					payload = {}
+					payload['user_id'] = referer_detail['id']
+					payload['ticket_id'] = 1						
+					receiver_id = referer_detail['id']
+					sender_id = 1
+					if referer_valid:
+						user_refcount = 1
+						user_havref = 1
+					else:
+						user_refcount = 0
+						user_havref = 0
+					current_user = db.session.query(User).filter_by(id=user.id)
+					current_user.update({
+						'referal_count' : user_refcount, 
+						'have_refered' : user_havref 
+					})
+					db.session.commit()
+					# only send notification if count less than 10
+					if referer.referal_count < 10:
+						type = "Referral Notification"
+						message = "%s has registered referring you, your total referals count is: %d" % (user.username, referer.referal_count)
+						FCMService().send_single_notification(type, message, receiver_id, sender_id)
+					# else count==10, send notif and create new ticket
+					elif referer.referal_count == 10:
+						type = "Free Ticket Notification"
+						message = "Congratulation! You have been referred 10 times! You've can get one free ticket, please click on claim button to claim your reward"
+						FCMService().send_single_notification(type, message, receiver_id, sender_id)
 			return result
 		else:
 			return result
