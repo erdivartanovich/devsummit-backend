@@ -73,6 +73,7 @@ class OrderService():
 
 	def get(self, user_id):
 		orders = db.session.query(Order).filter_by(user_id=user_id).order_by(Order.created_at.desc()).all()
+		type = 'user'
 		results = []
 		for order in orders:
 			items = db.session.query(OrderDetails).filter_by(order_id=order.id).all()
@@ -86,11 +87,12 @@ class OrderService():
 				order['payment'] = None
 			amount = 0
 			for item in items:
+				type = item.ticket.type
 				amount += item.price * item.count 
 			order['amount'] = amount
 			order['referal'] = referal
+			order['type'] = type
 			results.append(order)
-
 		return results
 
 	def show(self, id):
@@ -116,13 +118,14 @@ class OrderService():
 		self.model_order.user_id = payloads['user_id']
 		self.model_order.status = 'pending'
 		referal = db.session.query(Referal).filter_by(referal_code=payloads['referal_code'])
-		if(referal.first() is not None and referal.first().quota > 0):
-			referal.update({
-				'quota': referal.first().quota - 1
-			})
-			self.model_order.referal_id = referal.first().as_dict()['id']
-		else:
-			return response.set_error(True).set_data(None).set_message('quota for specified code have exceeded the limit').build()
+		if referal.first() is not None:
+			if referal.first().quota > 0:
+				referal.update({
+					'quota': referal.first().quota - 1
+				})
+				self.model_order.referal_id = referal.first().as_dict()['id']
+			else:
+				return response.set_error(True).set_data(None).set_message('quota for specified code have exceeded the limit').build()
 		db.session.add(self.model_order)
 		try:
 			db.session.commit()
