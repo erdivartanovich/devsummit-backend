@@ -222,6 +222,14 @@ class UserService(BaseService):
 			paginate['links']).build()
 		return result
 
+	def get_user_filter(self, type=7):
+		results = []
+		users = db.session.query(User).filter(User.role_id > 6).all()
+		for user in users:
+			data = user.include_photos().as_dict()
+			results.append(data)
+		return results
+
 	def get_user_by_id(self, id):
 		response = ResponseBuilder()
 		user = db.session.query(
@@ -229,7 +237,7 @@ class UserService(BaseService):
 		user = user.include_photos().as_dict()
 		# add relation includes
 		includes = ''
-		if user['role_id'] != 1 and user['role_id'] != 7:
+		if user['role_id'] != 1 and user['role_id'] != 7 and user['role_id'] != 8:
 			for role, role_id in ROLE.items():
 				if role_id == user['role_id']:
 					includes = role.title()
