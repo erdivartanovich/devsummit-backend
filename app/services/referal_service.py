@@ -5,6 +5,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.models.referal import Referal
 from app.models.partners import Partner
 from app.models.referal_owner import ReferalOwner
+from app.models.order import Order
 from app.models.user import User
 from app.builders.response_builder import ResponseBuilder
 from app.services.user_ticket_service import UserTicketService
@@ -18,13 +19,16 @@ class ReferalService():
 		for referal in referals:
 			data = referal.as_dict()
 			owner = db.session.query(ReferalOwner).filter_by(referal_id=referal.id).first()
-			data['owner'] = db.session.query(Partner).filter_by(id=owner.referalable_id).first().as_dict()
+			if owner:
+				data['owner'] = db.session.query(Partner).filter_by(id=owner.referalable_id).first().as_dict()
+			else:
+				data['owner'] = None
 			results.append(data)
 		return results
 
 	def show(self, id):
 		referal = db.session.query(Referal).filter_by(id=id).first()
-		return referal
+		return referal.as_dict()
 
 	def create(self, payloads):
 		response = ResponseBuilder()
@@ -73,8 +77,6 @@ class ReferalService():
 		try:
 			self.model_referal = db.session.query(Referal).filter_by(id=id)
 			self.model_referal.update({
-				'discount_amount': payloads['discount_amount'],
-				'referal_code': payloads['referal_code'],
 				'quota': payloads['quota'],
 				'updated_at': datetime.datetime.now()
 			})
@@ -97,10 +99,15 @@ class ReferalService():
 		else:
 			return response.set_data(None).set_error(True).set_message('deletion failed').build()
 
-	def check_referal_code(self, referal_code):
+	def check_referal_code(self, referal_code, user):
 		response = ResponseBuilder()
+		used_code = db.session.query(Order).filter(Order.user_id == user['id']).filter(Order.referal_id != None).first()
+		if used_code:
+			return response.set_data({'used': True}).set_error(True).set_message('This user has used referal code before').build()
 		referal = db.session.query(Referal).filter_by(referal_code=referal_code).first()
 		if referal:
+			if referal.quota < 1:
+				return response.set_data({'quota_exceeded': True}).set_message('referal code uses have exceeded the quota').set_error(True).build()
 			# return referal data
 			return response.set_data(referal.as_dict()).set_message('referal code successfully retrieved').build()
 		return response.set_error(True).set_data({'code_invalid': True}).set_message('referal code is not valid').build()

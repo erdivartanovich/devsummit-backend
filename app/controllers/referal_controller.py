@@ -45,16 +45,10 @@ class ReferalController(BaseController):
 
 	@staticmethod
 	def update(request, id):
-		owner = request.json['owner'] if 'owner' in request.json else None
-		discount_amount = request.json['discount_amount'] if 'discount_amount' in request.json else None
-		referal_code = request.json['referal_code'] if 'referal_code' in request.json else ''
 		quota = request.json['quota'] if 'quota' in request.json else 1
 
-		if owner and discount_amount and referal_code and quota:
+		if quota:
 			payloads = {
-				'owner': owner,
-				'discount_amount': discount_amount,
-				'referal_code': referal_code,
 				'quota': quota
 			}
 		else:
@@ -82,11 +76,11 @@ class ReferalController(BaseController):
 		return BaseController.send_response_api(None, 'referal with id: ' + id + ' has been succesfully deleted')
 
 	@staticmethod
-	def check(request):
+	def check(request, user):
 		referal_code = request.json['referal_code'] if 'referal_code' in request.json else None
 		if referal_code:
 			# process
-			referal = referalservice.check_referal_code(referal_code)
+			referal = referalservice.check_referal_code(referal_code, user)
 			if referal['error']:
 				return BaseController.send_error_api(referal['data'], referal['message'])
 			return BaseController.send_response_api(referal['data'], referal['message'])

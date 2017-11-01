@@ -626,7 +626,8 @@ def referal_id(id, *args, **kwargs):
 @api.route('/referals/check', methods=['POST'])
 @token_required
 def check_referal(*args, **kwargs):
-    return ReferalController.check(request)
+    user = kwargs['user'].as_dict()
+    return ReferalController.check(request, user)
 
 @api.route('/referals/submit', methods=['POST'])
 @token_required
@@ -1116,7 +1117,7 @@ def get_partner_info(*args, **kwargs):
 def get_referal_info(id, *args, **kwargs):
     user = kwargs['user']
     if user.role_id == ROLE['admin']:
-        return PartnerPjController.admin_get_info(id, request)  
+        return PartnerPjController.admin_get_info(id)  
     return Response(json.dumps({'message': 'unauthorized'}), status=401, mimetype='application/json')
     
 
