@@ -61,6 +61,11 @@ PAYPAL = {
     'cancel_url': 'http://localhost:5000/'
 }
 
+EVENT_BRITE = {
+    'EVENTBRITE_EVENT_ID': '39451411233',
+    'EVENTBRITE_OAUTH_TOKEN': 'VVZMXUZB5PY4O65KK5AO'
+}
+
 SLACK = {
     'hook': 'https://hooks.slack.com/services/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',
     'notification': True
@@ -74,7 +79,7 @@ SERVER_KEY = 'VT-server-njhqghnFUZbtZgOg9ldNtY0l:'
 IMAGE_QUALITY = 70
 
 # FCM key
-FCM_SERVER_KEY = 'key=AAAA8iNOby4:APA91bGxdjtV_YTm3FnvjUiGJPPartTvM5COQFsubP-kBGP0AbmGBml1WtbYgAKc2-CDNcFGYLl4j0JzJq4AzeZwc47aURd3MTKLW_bLS6FtYokJdgjJcE7rM-9KiPlPJ029S9ua7OUF'
+FCM_SERVER_KEY = 'key=AAAA-YIsKqc:APA91bHWIn3yNFCPcSP4hQKqPYyZLewI8q9AoSWCVH8Qt39rlLP_6c02NuyoNP_o5FhXYi2UNlIV-HbzLct5U3w67Xjvu602YyCzaDbFk4-LJIZxcdl5_YsLkFVfqNExSsjkw9UIbQ_S'
 FCM_GENERAL_TOPIC = '/topics/devsummit_indonesia_2017'
 
 MAILGUN = {
