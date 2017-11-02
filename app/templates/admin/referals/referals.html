@@ -22,7 +22,7 @@
 {% block content %}
     <div class="box">
         <!-- /.box-header -->
-        
+
         <div class="box-body">
             <table id="referal-list1" class="table table-bordered table-striped">
                 <thead>
@@ -30,6 +30,7 @@
                     <th>Owner</th>
                     <th>Discount percentage %</th>
                     <th>Referal code</th>
+                    <th>Quota</th>
                     <th>Actions</th>
                 </tr>
                 </thead>
@@ -37,20 +38,20 @@
                     {% for referal in referals %}
                     <tr>
                         <td>
-                            {{ referal.owner }}
+                            <a href="/referal_details/{{ referal.id }}" class="referal_details" id='{{ referal.id }}'>{{ referal.owner.name }}</a>
                         </td>
                         <td>
-                            {{ referal.discount_amount }}
+                            {{ referal.discount_amount * 100 }}
                         </td>
                         <td>
                             {{ referal.referal_code }}
                         </td>
+                        <td>
+                            {{ referal.quota }}
+                        </td>
                          <td>
                             <button id='bte-{{ referal.id }}' type="button" class="btn btn-sm btn-info btn-edit" data-toggle="modal" data-target="#modal-edit">
                                 Edit
-                            </button>
-                            <button id='btd-{{ referal.id }}' type="button" class="btn btn-sm btn-info btn-delete" data-toggle="modal" data-target="#modal-delete">
-                                Delete
                             </button>
                         </td>
                     </tr>
@@ -63,7 +64,6 @@
         </div>
         {% include "admin/referals/referal_edit.html" %}
         {% include "admin/referals/referal_add.html" %}
-        {% include "admin/referals/referal_delete.html" %}
 
 {% endblock %}
 
@@ -77,21 +77,30 @@
     /* Display Attendee Detail */
     $('.btn-edit').click(function(event){
         $('.modal-title').html('Edit');
-
         const bte_id = $(this).attr('id');
         const id = bte_id.substring(4, bte_id.length);
         dsa.get('referals/' + id, function(result) {
-            // bind result value in to attendee_detail.html 
+            // bind result value in to attendee_detail.html
             const data = result['data'];
-            $('.referal-owner').val(data['owner']);
-            $('.referal-discountamount').val(data['discount_amount']);
-            $('.referal-code').val(data['referal_code']);
-            $('.btn-save').attr("id", data['id']);
+            $('.e-referal-discountamount').val(data.discount_amount * 100);
+            $('.e-referal-code').val(data.referal_code);
+            $('.e-referal-quota').val(data.quota);
+            $('.btn-save').attr("id", data.id);
         });
-    })
+    });
 
     $('.btn-add').click(function(event){
         $('.modal-title').html('Add New Referal');
+
+        const btn_id = $(this).attr('id');
+        dsa.get('partners', function(result) {
+          // append the result data to dropdown add
+          const data = result['data'];
+
+          data.map(function(item) {
+            $('.event-types-add').append(`<option value=${item.id}>${item.name}</option>`);
+          });
+        });
     });
 
     $('.btn-delete').click(function(event){
@@ -104,6 +113,7 @@
     $(function () {
         $('#referal-list1').DataTable();
     })
+
 </script>
 
 {% endblock %}

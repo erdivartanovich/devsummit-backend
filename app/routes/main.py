@@ -4,6 +4,7 @@ from app.services.helper import Helper
 from app.middlewares.rbac import get_previllege
 
 
+
 main = Blueprint('main', __name__)
 
 
@@ -98,6 +99,11 @@ def adduserphoto():
 def partners():
     if(request.method == 'GET'):
         return MainController.getPartners()
+
+@main.route('/partnerspj', methods=['GET'])
+def partners_pj():
+    if(request.method == 'GET'):
+        return MainController.getPartnersPj()
 
 
 @main.route('/entrycashlogs')
@@ -201,6 +207,26 @@ def verification_list():
     return MainController.verification_list()
 
 
+@main.route('/admin-verification')
+def admin_verification_list():
+    return MainController.admin_verification_list()
+
+
 @main.route('/payment-verification/submit-proof')
 def submit_proof():
     return MainController.submit_proof(request)
+
+
+@main.route('/email-verification', methods=['GET'])
+def email_address_verification():
+    token = request.args.get('token')
+    return MainController.verify_email_address(token)
+
+
+@main.route('/reset-password')
+def reset_password_user():
+    return MainController.reset_password_user(request)
+
+@main.route('/referal_details/<id>')
+def referal_info(id):
+    return MainController.get_referal_info(id)

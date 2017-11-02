@@ -9,7 +9,6 @@ from itsdangerous import (TimedJSONWebSignatureSerializer
 # import classes
 from app.models.base_model import BaseModel
 from app.models.user_photo import UserPhoto
-from app.models.role import Role  # noqa
 from app.models import db
 from app.services.helper import Helper
 from app.models.role import Role  # noqa
@@ -19,8 +18,9 @@ class User(db.Model, BaseModel):
     # table name
     __tablename__ = 'users'
     # displayed fields
-    visible = ['id', 'first_name', 'last_name', 'role_id', 'social_id', 'points',
-               'username', 'email', 'photos', 'fcmtoken', 'created_at', 'updated_at', 'referal', 'referal_count', 'have_refered']
+    visible = ['id', 'first_name', 'last_name', 'role_id', 'social_id', 'points', 'username', 'email',
+    'photos', 'fcmtoken', 'confirmed', 'created_at', 'updated_at', 'referal', 'referal_count', 'have_refered',
+    'referer']
 
     # columns definitions
     id = db.Column(db.Integer, primary_key=True)
@@ -41,10 +41,12 @@ class User(db.Model, BaseModel):
     )
     role = db.relationship('Role')
     referal = db.Column(db.String)
+    referer = db.Column(db.String)
     fcmtoken = db.Column(db.String)
     points = db.Column(db.Integer, default=0)
     referal_count = db.Column(db.Integer, default=0)
     have_refered = db.Column(db.Integer, default=0)
+    confirmed = db.Column(db.Integer, default=0)
 
     def __init__(self):
         self.created_at = datetime.datetime.now()

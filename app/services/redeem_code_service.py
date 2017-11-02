@@ -13,7 +13,9 @@ from app.models.booth import Booth
 from app.models.attendee import Attendee
 from app.models.user_booth import UserBooth
 from app.models.user_ticket import UserTicket
+from app.models.user_hacker import UserHacker
 from app.models.partners import Partner
+from app.models.hacker_team import HackerTeam
 from app.models.user import User
 from app.models.package_management import PackageManagement
 
@@ -47,9 +49,14 @@ class RedeemCodeService():
                     user = user.as_dict()
                     data['user'] = user
             elif data['codeable_type'] in ['partner', 'user']:
-                partner = db.session.query(Partner).filter_by(id=data['codeable_id']).first()
-                partner = partner.as_dict()
-                data['partner'] = partner
+                if data['codeable_type'] == 'partner':
+                    partner = db.session.query(Partner).filter_by(id=data['codeable_id']).first()
+                    partner = partner.as_dict()
+                    data['partner'] = partner
+                else:
+                    user = db.session.query(User).filter_by(id=data['codeable_id']).first()
+                    user = user.as_dict()
+                    data['user'] = user
             results.append(data)
         return results
 
@@ -123,7 +130,6 @@ class RedeemCodeService():
         for i in range(0, ticket.quota):
             code = secrets.token_hex(4)
             while (code in codes):
-                print(code)
                 code = secrets.token_hex(4)
             self.model_redeem_code = RedeemCode()
             self.model_redeem_code.codeable_type = 'user'
@@ -170,6 +176,21 @@ class RedeemCodeService():
                 user['role_id'] = 3
                 db.session.commit()
                 _result['user']['booth'] = booth
+            elif redeem_code['codeable_type'] == 'hackaton':
+                hackaton = db.session.query(HackerTeam).filter_by(id=redeem_code['codeable_id']).first().as_dict()
+                user_hacker = UserHacker()
+                user_hacker.hacker_team_id = redeem_code['codeable_id']
+                user_hacker.user_id = user['id']
+                db.session.add(user_hacker)
+                user['role_id'] = 5
+                # create user ticket here
+                userticket = UserTicket()
+                userticket.user_id = user['id']
+                userticket.ticket_id = hackaton['ticket_id']
+                db.session.add(userticket)
+
+                db.session.commit()
+                _result['user']['hackaton'] = hackaton
             raw_redeem_code.update({
                 'used': True
             })

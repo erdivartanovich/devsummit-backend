@@ -1,4 +1,4 @@
-from flask import render_template, request
+from flask import render_template, request, redirect
 from app.controllers.base_controller import BaseController
 from app.models.base_model import BaseModel
 from app.services import attendeeservice
@@ -18,6 +18,7 @@ from app.services import rundownlistservice
 from app.services import redeemcodeservice
 from app.services import speakercandidateservice
 from app.services import sourceservice
+from app.services import orderservice
 from app.services import overviewservice
 from app.services import feedreportservice
 from app.services import feedservice
@@ -25,20 +26,25 @@ from app.services import sponsortemplateservice
 from app.services import invoiceservice
 from app.services import packagemanagementservice
 from app.services import tickettransferservice
-
+from app.configs.constants import ROLE
+from app.controllers.partner_pj_controller import PartnerPjController
 
 class MainController(BaseController):
 
     def index():
         attendees = overviewservice.getAttendees()
+        users = overviewservice.getUsers()
         booths = overviewservice.getBooths()
         sponsors = overviewservice.getSponsors()
         finances = overviewservice.getFinances()
+        order_count = overviewservice.getOrders()
         overview = {
+            'users': users,
             'attendees': attendees,
             'booths': booths,
             'sponsors': sponsors,
-            'finances': finances
+            'finances': finances,
+            'order': order_count
         }
         return render_template('admin/base/overview.html', overview=overview)
 
@@ -47,7 +53,8 @@ class MainController(BaseController):
         return render_template('admin/attendees/attendees.html', attendees=attendees['data'])
 
     def getPayments():
-        payments = paymentservice.admin_get()
+        param = {'transaction_status': 'captured'}
+        payments = paymentservice.admin_filter(param)
         return render_template('admin/payments/payments.html', payments=payments['data'])
 
     def getAuthorizePayments():
@@ -61,7 +68,8 @@ class MainController(BaseController):
 
     def getReferals():
         referals = referalservice.get()
-        return render_template('admin/referals/referals.html', referals=referals)
+        partners = partnerservice.get(request)
+        return render_template('admin/referals/referals.html', referals=referals, partners=partners)
 
     def getAccounts():
         accounts = userservice.list_user(request)
@@ -103,6 +111,11 @@ class MainController(BaseController):
     def getPartners():
         partners = partnerservice.get(request)
         return render_template('admin/partnership/partners/partners.html', partners=partners['data'])
+
+    def getPartnersPj():
+        partners = partnerservice.filter('community', request)
+        users = userservice.get_user_filter(ROLE['user'])
+        return render_template('admin/partnership/partners/partner_pj.html', partners=partners['data'], users=users)
 
     def getEntryCashLogs():
         entrycashlogs = entrycashlogservice.get(request)
@@ -165,9 +178,27 @@ class MainController(BaseController):
     def getTransferLog(request):
         logs = tickettransferservice.get_logs()
         return render_template('admin/ticket-transfer-log/ticket-transfer-log.html', logs=logs)
-    
+
     def verification_list():
         return render_template('admin/payment_verification/verification_list.html')
 
+    def admin_verification_list():
+        orders = orderservice.unverified_order()
+        return render_template('admin/payment_verification/admin_verification_list.html', orders=orders['data'])
+
     def submit_proof(request):
         return render_template('admin/payment_verification/submit_proof.html')
+
+
+    def verify_email_address(token):
+        result = userservice.email_address_verification(token)
+        return render_template('admin/email_verification/email_verification.html', result=result)
+
+
+    def reset_password_user(request):
+        return render_template('admin/users/reset_password.html')
+
+
+    def get_referal_info(id):
+        referal_info = PartnerPjController.admin_get_info(id)
+        return render_template('admin/referals/referal_details.html', referal_info=referal_info)

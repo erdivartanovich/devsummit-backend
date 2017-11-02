@@ -3,13 +3,14 @@ import base64
 import requests
 import paypalrestsdk
 from sqlalchemy.exc import SQLAlchemyError
-from app.models import db
+from app.models import db, mail
 # import model class
 from app.models.payment import Payment
 from app.models.order_details import OrderDetails
 from app.models.user import User
 from app.models.order import Order
 from app.models.booth import Booth
+from app.models.redeem_code import RedeemCode
 from app.models.hacker_team import HackerTeam
 from app.models.user_hacker import UserHacker
 from app.models.user_booth import UserBooth
@@ -18,6 +19,7 @@ from app.services.user_ticket_service import UserTicketService
 from app.services.redeem_code_service import RedeemCodeService
 from app.builders.response_builder import ResponseBuilder
 from app.services.fcm_service import FCMService
+from app.services.email_service import EmailService
 from app.configs.constants import MIDTRANS_API_BASE_URL as url, SERVER_KEY
 from app.configs.constants import VA_NUMBER
 from app.configs.constants import TICKET_TYPES, ROLE
@@ -48,7 +50,13 @@ class PaymentService():
 		results = self.admin_get()['data']
 		_results = []
 		for result in results:
-			if result['fraud_status'] is not None and result['fraud_status'] == param['fraud_status']:
+			if 'fraud_status' in param:
+				if result['fraud_status'] is not None and result['fraud_status'] == param['fraud_status']:
+					_results.append(result)
+			elif 'transaction_status' in param:
+				if result['transaction_status'] is not None and result['transaction_status'] == param['transaction_status']:
+					_results.append(result)
+			else:
 				_results.append(result)
 		return response.set_data(_results).build()
 
@@ -406,14 +414,17 @@ class PaymentService():
 
 	# this will send the all payment methods payload to midtrand api
 	def send_to_midtrans_api(self, payloads):
+		print(payloads, 'payloads arg')
 		response = ResponseBuilder()
 		endpoint = url + 'charge'
+		print(endpoint, 'charge endpoint')
 		result = requests.post(
 				endpoint,
 				headers=self.headers,
 				json=payloads
 		)
 		payload = result.json()
+		print(payload, 'result from midtrans')
 		if(str(payload['status_code']) in ['400', '202']):
 
 			if 'validation_messages' in payload and payload['validation_messages'][0]:
@@ -555,8 +566,9 @@ class PaymentService():
 			payment = False
 		return payment
 
-	def confirm(self, payload, user_id):
+	def confirm(self, payload, user_id, request):
 		response = ResponseBuilder()
+		emailservice = EmailService()
 		transaction_exist = db.session.query(Payment).filter_by(transaction_id=payload['transaction_id']).first()
 		if transaction_exist:
 			return response.set_error(True).set_message('this transaction have been used before').set_data(None).build()
@@ -570,9 +582,12 @@ class PaymentService():
 		user = order_.user
 		order_details = db.session.query(OrderDetails).filter_by(order_id=payload['order_id']).all()
 		check_total = 0
+		discount = 0
 		for order in order_details:
 			check_total += order.price * order.count	
-		if check_total == paypal_details_amount:
+		if order_.referal_id is not None:
+			discount = check_total * order_.referal.discount_amount 
+		if check_total - discount <= paypal_details_amount:
 			payment_exist = db.session.query(Payment).filter_by(transaction_id=payload['transaction_id']).first()
 			if payment_exist:
 				return response.set_data(None).set_message('Payment had been completed!').set_error(True).build()
@@ -589,6 +604,7 @@ class PaymentService():
 				data = e.orig.args
 				return response.set_data(None).set_message(data).set_error(True).build()
 			items = db.session.query(OrderDetails).filter_by(order_id=payment.order_id).first()
+			url_invoice = request.host + '/invoices/'+ order_.id
 			if items.ticket.type == TICKET_TYPES['exhibitor']:
 				payload = {}
 				payload['user_id'] = user.id
@@ -603,12 +619,22 @@ class PaymentService():
 				redeem_payload['ticket_id'] = items.ticket_id
 				redeem_payload['codeable_id'] = user.id
 				RedeemCodeService().purchase_user_redeems(redeem_payload)
+				get_codes = db.session.query(RedeemCode).filter_by(codeable_type='user', codeable_id=user.id).all()
+				code = []
+				for get_code in get_codes:
+					code.append("<li>%s</li>" %(get_code.code))
+				li = ''.join(code)
+				template = "<h3>You have complete the payment with order_id = %s</h3><h4>Here are the redeem codes for claiming full 3 days ticket at devsummit event as described in the package information : </h4>%s<h3>Use the above code to claim your ticket</h3><h3>Thank you for your purchase</h3>" %(order_.id, li)
+				template += "<h4>And here is your Invoice:</h4>"
+				template += '<a href="'+ url_invoice +'">Klik here to show the invoice</a>'
+				email = emailservice.set_recipient(user.email).set_subject('Congratulations !! you received exhibitor code').set_sender('noreply@devsummit.io').set_html(template).build()
+				mail.send(email)
 			if items.ticket.type == TICKET_TYPES['hackaton']:
 				payload = {}
 				payload['user_id'] = user.id
 				payload['ticket_id'] = items.ticket_id
 				UserTicketService.create(payload)
-				self.create_hackaton_team(user)
+				self.create_hackaton_team(user, items.ticket_id)
 				user_query = db.session.query(User).filter_by(id=user.id)
 				user_query.update({
 					'role_id': ROLE['hackaton']
@@ -619,21 +645,31 @@ class PaymentService():
 				redeem_payload['codeable_id'] = hacker_team.id,
 				redeem_payload['count'] = items.ticket.quota
 				RedeemCodeService().create(redeem_payload)
-
-				# user_role = db.session.query(User).filter_by(id=user.id)
-				# user_role.update({
-				# 	'updated_at': datetime.datetime.now(),
-				# 	'role_id': 3
-				# })
-				# ticket_quota = order_details.ticket.quota
-				# for i 
+				get_codes = db.session.query(RedeemCode).filter_by(codeable_type='hackaton', codeable_id=hacker_team.id).all()
+				code = []
+				for get_code in get_codes:
+					code.append("<li>%s</li>" %(get_code.code))
+				li = ''.join(code)
+				template = "<h3>You have complete the payment with order_id = %s</h3><h4>Here your redeem codes : </h4>%s<h3>Share the above code to your teammate, and put it into redeem code menu to let them join your team and claim their ticket</h3><h3>Thank you for your purchase</h3>" %(order_.id, li)
+				template += "<h4>And here is your Invoice:</h4>"
+				template += '<a href="'+ url_invoice +'">Klik here to show the invoice</a>'
+				email = emailservice.set_recipient(user.email).set_subject('Congratulations !! you received hackaton code').set_sender('noreply@devsummit.io').set_html(template).build()
+				mail.send(email)
 			else:				
+				result = None
 				for order in order_details:
 					for i in range(0, order.count):
 						payload = {}
 						payload['user_id'] = user.id
 						payload['ticket_id'] = order.ticket_id
-						UserTicketService().create(payload)
+						result = UserTicketService().create(payload)
+				if (result and (not result['error'])):
+					template = "<h3>Congratulation! you have the previlege to attend Indonesia Developer Summit</h3>"
+					template += "<h4>Here is your Invoice:</h4>"
+					template += '<a href="'+ url_invoice +'">Klik here to show the invoice</a>'
+					template += "<h5>Thank you.</h5>"
+					email = emailservice.set_recipient(user.email).set_subject('Devsummit Ticket Invoice').set_sender('noreply@devsummit.io').set_html(template).build()
+					mail.send(email)
 			confirmed_order = db.session.query(Order).filter_by(id=payment.order_id)
 			confirmed_order.update({
 				'status': 'paid'
@@ -660,13 +696,14 @@ class PaymentService():
 		db.session.add(userbooth)
 		db.session.commit()
 
-	def create_hackaton_team(self, user):
+	def create_hackaton_team(self, user, ticket_id):
 		hacker_team = HackerTeam()
 		hacker_team.name = 'Your Hacker Team name'
 		hacker_team.logo = ''
 		hacker_team.project_name = 'Project Name'
 		hacker_team.project_url = 'Project Link'
 		hacker_team.theme = ''
+		hacker_team.ticket_id = ticket_id
 		db.session.add(hacker_team)
 		db.session.commit()
 		hackteam = db.session.query(HackerTeam).order_by(HackerTeam.created_at.desc()).first()

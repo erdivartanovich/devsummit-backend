@@ -1,7 +1,11 @@
 from app.controllers.base_controller import BaseController
-from app.services import orderverificationservice
-from app.configs.constants import ROLE
-
+from app.services import orderverificationservice, slackservice
+from app.configs.constants import ROLE, SLACK
+from app.models import db
+from app.models.order_verification import OrderVerification
+from app.models.slack.slack_payment import SlackPayment
+from app.models.slack.slack_verify import SlackVerify
+from app.configs.constants import SLACK
 
 class OrderVerificationController(BaseController):
 
@@ -26,6 +30,9 @@ class OrderVerificationController(BaseController):
 			return BaseController.send_error_api(None, 'field is not complete')
 		result = orderverificationservice.create(payloads)
 		if not result['error']:
+			if SLACK['notification']:
+				slackverify = SlackVerify(result)
+				slackservice.send_message(slackverify.build())
 			return BaseController.send_response_api(result['data'], result['message'])
 		else:
 			return BaseController.send_error_api(result['data'], result['message'])
@@ -35,7 +42,6 @@ class OrderVerificationController(BaseController):
 		orderverification = orderverificationservice.show(id)
 		return BaseController.send_response_api(orderverification['data'], orderverification['message'])	
 
-	
 	@staticmethod
 	def update(id, request):
 		user_id = request.form['user_id'] if 'user_id' in request.form else None
@@ -62,10 +68,16 @@ class OrderVerificationController(BaseController):
 			return BaseController.send_error_api(data['data'], data['message'])
 		return BaseController.send_response_api(data['data'], data['message'])
 
-
 	@staticmethod
 	def verify(id, request):
-		data = orderverificationservice.verify(id)
+		data = orderverificationservice.verify(id, request)
 		if data['error']:
 			return BaseController.send_error_api(data['data'], data['message'])
+		order_verification = db.session.query(OrderVerification).filter_by(id=id).first()
+		payload = {
+			'order_id': order_verification.order.id
+		}
+		if SLACK['notification']:
+			slackpayment = SlackPayment(order_verification.user, payload, False)
+			slackservice.send_message(slackpayment.build())
 		return BaseController.send_response_api(data['data'], data['message'])

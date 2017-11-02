@@ -3,6 +3,9 @@ from app.models import db
 from sqlalchemy.exc import SQLAlchemyError
 # import model class
 from app.models.referal import Referal
+from app.models.partners import Partner
+from app.models.referal_owner import ReferalOwner
+from app.models.order import Order
 from app.models.user import User
 from app.builders.response_builder import ResponseBuilder
 from app.services.user_ticket_service import UserTicketService
@@ -12,35 +15,49 @@ class ReferalService():
 
 	def get(self):
 		referals = db.session.query(Referal).all()
-		return referals
+		results = []
+		for referal in referals:
+			data = referal.as_dict()
+			owner = db.session.query(ReferalOwner).filter_by(referal_id=referal.id).first()
+			if owner:
+				temp_owner = db.session.query(Partner).filter_by(id=owner.referalable_id).first()
+				if temp_owner:
+					data['owner'] = temp_owner.as_dict()
+				else:
+					data['owner'] = None
+			else:
+				data['owner'] = None
+			results.append(data)
+		return results
 
 	def show(self, id):
 		referal = db.session.query(Referal).filter_by(id=id).first()
-		return referal
+		return referal.as_dict()
 
 	def create(self, payloads):
+		response = ResponseBuilder()
 		self.model_referal = Referal()
-		self.model_referal.owner = payloads['owner']
 		self.model_referal.discount_amount = payloads['discount_amount']
 		self.model_referal.referal_code = payloads['referal_code']
+		self.model_referal.quota = payloads['quota']
+
 		db.session.add(self.model_referal)
 		try:
 			db.session.commit()
+			self.model_referal_owner = ReferalOwner()
+			self.model_referal_owner.referalable_type = payloads['owner_type']
+			self.model_referal_owner.referalable_id = payloads['owner_id']
+			self.model_referal_owner.referal_id = self.model_referal.id
+			db.session.add(self.model_referal_owner)
+			db.session.commit()
 			data = self.model_referal.as_dict()
-			return {
-				'error': False,
-				'data': data,
-				'message': 'referal created successfully'
-			}
+			return response.set_data(data).set_message('referal created successfully').build()
 		except SQLAlchemyError as e:
 			data = e.orig.args
-			return {
-				'error': True,
-				'data': {'sql_error': True},
-				'message': data
-			}
+			return response.set_data({'sql_error': True}).set_error(True).set_message(data).build()
 
 
+	# should be placed in another class as should not be related to referal (should be user referal)
 	def reward_referal(self, user):
 		response = ResponseBuilder()
 		if user['referal_count'] < 10:
@@ -60,59 +77,43 @@ class ReferalService():
 
 
 	def update(self, payloads, id):
+		response = ResponseBuilder()
 		try:
 			self.model_referal = db.session.query(Referal).filter_by(id=id)
 			self.model_referal.update({
-				'owner': payloads['owner'],
+				'quota': payloads['quota'],
 				'discount_amount': payloads['discount_amount'],
 				'referal_code': payloads['referal_code'],
 				'updated_at': datetime.datetime.now()
 			})
+
 			db.session.commit()
 			data = self.model_referal.first().as_dict()
-			return {
-				'error': False,
-				'data': data,
-				'message': 'referal updated successfully'
-			}
+			return response.set_data(data).set_message('referal updated successfully').build()
 		except SQLAlchemyError as e:
 			data = e.orig.args
-			return {
-				'error': True,
-				'data': {'sql_error': True},
-				'message': data
-			}
+			return response.set_error(True).set_data({'sql_error': True}).set_message(data).build()
 
 	def delete(self, id):
+		response = ResponseBuilder()
 		self.model_referal = db.session.query(Referal).filter_by(id=id)
 		if self.model_referal.first() is not None:
 			# delete row
 			self.model_referal.delete()
 			db.session.commit()
-			return {
-				'error': False,
-				'data': None,
-				'message': 'referal deleted succesfully'
-			}
+			return response.set_data(None).set_message('referal deleted successfully').build()
 		else:
-			data = 'data not found'
-			return {
-				'error': True,
-				'data': None,
-				'message': data
-			}
+			return response.set_data(None).set_error(True).set_message('deletion failed').build()
 
-	def check_referal_code(self, referal_code):
+	def check_referal_code(self, referal_code, user):
+		response = ResponseBuilder()
+		used_code = db.session.query(Order).filter(Order.user_id == user['id']).filter(Order.referal_id != None).first()
+		if used_code:
+			return response.set_data({'used': True}).set_error(True).set_message('This user has used referal code before').build()
 		referal = db.session.query(Referal).filter_by(referal_code=referal_code).first()
 		if referal:
+			if referal.quota < 1:
+				return response.set_data({'quota_exceeded': True}).set_message('referal code uses have exceeded the quota').set_error(True).build()
 			# return referal data
-			return {
-				'error': False,
-				'data': referal.as_dict(),
-				'message': 'referal code successfully retrieved'
-			}
-		return {
-			'error': True,
-			'data': {'code_invalid': True},
-			'message': 'referal code is not valid'
-		}
+			return response.set_data(referal.as_dict()).set_message('referal code successfully retrieved').build()
+		return response.set_error(True).set_data({'code_invalid': True}).set_message('referal code is not valid').build()

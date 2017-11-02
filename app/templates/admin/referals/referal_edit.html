@@ -12,25 +12,25 @@
                             <ul class="list-group list-group-unbordered">
                                 <li class="list-group-item">
                                     <div class="form-group">
-                                        <label for="referal-owner">Owner:</label>
-                                        <input type="text" class="form-control referal-owner" id="referal-owner">
+                                        <label for="e-referal-discountamount">Discount Percentage %:</label>
+                                        <input type="text" class="form-control e-referal-discountamount" id="e-referal-discountamount">
                                     </div>
                                 </li>
                                 <li class="list-group-item">
                                     <div class="form-group">
-                                        <label for="referal-discountamount">Discount Percentage %:</label>
-                                        <input type="text" class="form-control referal-discountamount" id="referal-discountamount">
+                                        <label for="e-referal-code">Referal code:</label>
+                                        <input type="text" class="form-control e-referal-code" id="e-referal-code">
                                     </div>
                                 </li>
                                 <li class="list-group-item">
                                     <div class="form-group">
-                                        <label for="referal-code">Referal code:</label>
-                                        <input type="text" class="form-control referal-code" id="referal-code">
+                                        <label for="e-referal-quota">Quota:</label>
+                                        <input type="text" class="form-control e-referal-quota" id="e-referal-quota">
                                     </div>
                                 </li>
                             </ul>
                         <a href="#" class="btn btn-primary btn-block btn-save" id="-"><b>Save</b></a>
-        
+
                     </div>
                     <!-- /.box-body -->
                 </div>
@@ -50,13 +50,13 @@
     $('.btn-save').click(function(event){
         const id = $(this).attr('id');
         payload = {
-            "owner": $('.referal-owner').val(),
-            "discount_amount": $('.referal-discountamount').val(),
-            "referal_code": $('.referal-code').val()
+            "quota": $('#e-referal-quota').val(),
+            "discount_amount": $('#e-referal-discountamount').val() / 100,
+            "referal_code": $('#e-referal-code').val()
         };
         dsa.patch('referals/' + id, payload, function(result) {
             if(result.meta.success) {
-                window.location = "http://localhost:5000/referals";
+                window.location = "/referals";
             }
         });
     })

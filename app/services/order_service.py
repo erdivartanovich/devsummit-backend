@@ -1,6 +1,7 @@
 from app.models import db
-from flask import current_app
+from flask import current_app, request
 from app.services.helper import Helper 
+from app.services.order_verification_service import OrderVerificationService 
 import paypalrestsdk
 import datetime
 from sqlalchemy.exc import SQLAlchemyError
@@ -25,54 +26,13 @@ class OrderService():
 		})
 
 
-	# def paypalorder(self, payload):
-	# 	order_details = payload['order_details']
-	# 	ord_det = []
-	# 	for order in order_details:
-	# 		item = {}
-	# 		ticket = db.session.query(Ticket).filter_by(id=order['ticket_id']).first().as_dict()
-	# 		item['name'] = ticket['ticket_type']
-	# 		item['quantity'] = str(order['count'])
-	# 		item['currency'] = payload['currency']
-	# 		item['price'] = ticket['price']
-
-	# 		ord_det.append(item)
-
-	# 	payment = paypalrestsdk.Payment({
-	# 		"intent": "order",
-	# 		"payer": {
-	# 			"payment_method": "paypal"
-	# 		},
-	# 		"transactions": [{
-	# 			"amount": {
-	# 				"currency":payload['currency'],
-	# 				"total": payload['gross_amount']
-	# 			},
-	# 			"payee": {
-	# 				"email": PAYPAL['payee']
-	# 			},
-	# 			"description": "Devsummit ticket purchase.",
-	# 			"item_list": {
-	# 				"items": ord_det
-	# 			}, 
-	# 		}],
-	# 		"redirect_urls": {
-	# 			"return_url": PAYPAL['return_url'],
-	# 	        "cancel_url": PAYPAL['cancel_url']
-	# 	    }})
-	# 	result = payment.create()
-	# 	if result:
-	# 		self.get_paypal_detail(payment.id)
-	# 	else:
-	# 		print(payment.error)
-	# 	return payment
-
 	def get_paypal_detail(self, id):
 		payment = paypalrestsdk.Payment.find(id)
 		return payment
 
 	def get(self, user_id):
 		orders = db.session.query(Order).filter_by(user_id=user_id).order_by(Order.created_at.desc()).all()
+		type = 'user'
 		results = []
 		for order in orders:
 			items = db.session.query(OrderDetails).filter_by(order_id=order.id).all()
@@ -86,12 +46,23 @@ class OrderService():
 				order['payment'] = None
 			amount = 0
 			for item in items:
+				type = item.ticket.type
 				amount += item.price * item.count 
 			order['amount'] = amount
 			order['referal'] = referal
+			order['type'] = type
 			results.append(order)
-
 		return results
+
+	def unverified_order(self):
+		response = ResponseBuilder()
+		orders = db.session.query(Order).filter(Order.status != 'paid').all()
+		results = [] 
+		for order in orders:
+			data = order.as_dict()
+			data['user'] = order.user.as_dict()
+			results.append(data)
+		return response.set_data(results).build()
 
 	def show(self, id):
 		response = ResponseBuilder()
@@ -110,14 +81,20 @@ class OrderService():
 	def create(self, payloads, user):
 		response = ResponseBuilder()
 		if user['role_id'] == ROLE['hackaton']:
-			return response.set_data(None).set_message('You cant buy ticket hackaton twice').set_error(True).build()
+			return response.set_data(None).set_message('You cannot buy hackaton ticket twice').set_error(True).build()
 		self.model_order = Order()
 		order_details = payloads['order_details']
 		self.model_order.user_id = payloads['user_id']
 		self.model_order.status = 'pending'
 		referal = db.session.query(Referal).filter_by(referal_code=payloads['referal_code'])
-		if(referal.first() is not None):
-			self.model_order.referal_id = referal.first().as_dict()['id']
+		if referal.first() is not None:
+			if referal.first().quota > 0:
+				referal.update({
+					'quota': referal.first().quota - 1
+				})
+				self.model_order.referal_id = referal.first().as_dict()['id']
+			else:
+				return response.set_error(True).set_data(None).set_message('quota for specified code have exceeded the limit').build()
 		db.session.add(self.model_order)
 		try:
 			db.session.commit()
@@ -138,20 +115,30 @@ class OrderService():
 					order_item.price = ticket.price
 				db.session.add(order_item)
 				db.session.commit()
-				order_items.append(order_item.as_dict())
+				order_item_dict = order_item.as_dict()
+				order_item_dict['ticket'] = order_item.ticket.as_dict() 
+				order_items.append(order_item_dict)
 			if payloads['payment_type'] == 'offline':
-				gross_amount = (item['count'] * ticket.price)
+				gross_amount = (item['count'] * ticket.price) 
+				if referal.first() is not None:
+					# discount on gross amount
+					gross_amount -= gross_amount * referal.first().discount_amount 
 				payment = Payment()
 				payment.order_id = order_id
 				payment.payment_type = 'offline'
 				payment.gross_amount = gross_amount
 				payment.transaction_time = datetime.datetime.now()
 				payment.transaction_status = 'pending'
+
 				db.session.add(payment)
 				db.session.commit()	
-			
-				# if payloads['payment_type'] == 'paypal':
-					# self.paypalorder(payloads)
+				# check if ticket is free
+				if gross_amount == 0:
+					# call verify service
+					ov_service = OrderVerificationService()
+					ov_service.admin_verify(self.model_order.id, request, payloads['hacker_team_name'])
+
+
 			# save all items
 			return {
 				'error': False,

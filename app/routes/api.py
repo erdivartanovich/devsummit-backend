@@ -1,11 +1,14 @@
 '''
 put api route in here
 '''
-from flask import Blueprint, request, jsonify
-
+from flask import Blueprint, request, jsonify, json, Response
 # import middlewares
 from app.middlewares.authentication import token_required
-from app.models import socketio
+from app.models import mail, db, socketio, mail
+from app.services.email_service import EmailService
+from app.services import userservice
+from app.models.user import User
+from app.builders.response_builder import ResponseBuilder
 from flask_socketio import emit
 
 # controllers import
@@ -49,7 +52,10 @@ from app.controllers.package_management_controller import PackageManagementContr
 from app.controllers.order_verification_controller import OrderVerificationController
 from app.controllers.user_authorization_controller import UserAuthorizationController
 from app.controllers.hackaton_controller import HackatonController
-
+from app.controllers.user_feedback_controller import UserFeedbackController
+from app.controllers.partner_pj_controller import PartnerPjController
+from app.controllers.event_brite_controller import EventBriteController
+from app.services.slack_service import SlackService
 from app.configs.constants import ROLE
 
 
@@ -170,6 +176,16 @@ def spot_id(id, *args, **kwargs):
     return SpotController.update(request, id)
 
 
+@api.route('/admin/orders', methods=['GET'])
+@token_required
+def admin_verifyorders(*args, **kwargs):
+    return OrderController.unverified_order()
+
+@api.route('/admin/orders/verify/<id>', methods=['POST'])
+@token_required
+def admin_verify_order(id, *args, **kwargs):
+    return OrderController.verify_order(id, request)
+
 # Ticket Order API
 @api.route('/orders', methods=['GET', 'POST'])
 @token_required
@@ -191,14 +207,16 @@ def orders_id(id, *args, **kwargs):
         return OrderController.delete(id)
 
 
-@api.route('/orders/<order_id>/details', methods=['GET', 'POST'])
-@token_required
+@api.route('/orders/<order_id>/details', methods=['GET'])
+# @token_required # disabled for consumed in invoice, user show invoice should not require login
 def orders_details(order_id, *args, **kwargs):
-    if(request.method == 'GET'):
-        return OrderDetailsController.index(order_id)
-    elif(request.method == 'POST'):
-        return OrderDetailsController.create(order_id, request)
+    return OrderDetailsController.index(order_id)
 
+
+@api.route('/orders/<order_id>/details', methods=['POST'])
+@token_required
+def orders_detail_post(order_id, *args, **kwargs):
+    return OrderDetailsController.create(order_id, request)
 
 @api.route('/orders/<order_id>/details/<detail_id>', methods=['PUT', 'PATCH', 'DELETE', 'GET'])
 @token_required
@@ -239,7 +257,6 @@ def delete(event_id):
 
 # Schedule api
 @api.route('/schedules', methods=['GET', 'POST'])
-@token_required
 def schedule(*args, **kwargs):
     filter = request.args.get('filter')
     if(request.method == 'POST'):
@@ -264,7 +281,6 @@ def schedule_id(id, *args, **kwargs):
 
 # Speakers endpoint
 @api.route('/speakers', methods=['GET'])
-@token_required
 def speaker(*args, **kwargs):
     if(request.method == 'GET'):
         return SpeakerController.index()
@@ -279,6 +295,11 @@ def speaker_id(id, *args, **kwargs):
         return SpeakerController.show(id)
 
 
+@api.route('/booths', methods=['GET'])
+def get_exhibitors(*args, **kwargs):
+    return BoothController.index(request)
+
+
 # Booth api
 @api.route('/booths', methods=['PUT', 'PATCH', 'GET', 'POST'])
 @token_required
@@ -287,11 +308,9 @@ def booth(*args, **kwargs):
     if(request.method == 'PUT' or request.method == 'PATCH'):
         if(user['role_id'] == ROLE['booth']):
             return BoothController.update(request, user['id'])
-        return 'Unauthorized'
+        return Response(json.dumps({'message': 'unauthorized'}), status=401, mimetype='application/json')
     elif(request.method == 'POST'):
         return BoothController.create(request)
-    elif(request.method == 'GET'):
-        return BoothController.index(request)
 
 
 # Booth route by id
@@ -573,8 +592,8 @@ def status(id, *args, **kwargs):
 @api.route('/payments/confirm', methods=['POST'])
 @token_required
 def confirm_payment(*args, **kwargs):
-    user_id = kwargs['user'].id
-    return PaymentController.confirm(request, user_id)
+    user = kwargs['user']
+    return PaymentController.confirm(request, user)
 
 
 @api.route('/payments/<payment_id>', methods=['GET'])
@@ -620,7 +639,8 @@ def referal_id(id, *args, **kwargs):
 @api.route('/referals/check', methods=['POST'])
 @token_required
 def check_referal(*args, **kwargs):
-    return ReferalController.check(request)
+    user = kwargs['user'].as_dict()
+    return ReferalController.check(request, user)
 
 @api.route('/referals/submit', methods=['POST'])
 @token_required
@@ -700,13 +720,16 @@ def get_entry_cash_log_filter(*args, **kwargs):
     return EntryCashLogController.get_by_filter(request)
 
 
-@api.route('/sponsors', methods=['GET', 'POST'])
+@api.route('/sponsors', methods=['POST'])
 @token_required
+def post_sponsor(*args, **kwargs):
+    return SponsorController.create(request)
+
+
+
+@api.route('/sponsors', methods=['GET'])
 def get_sponsors(*args, **kwargs):
-    if(request.method == 'GET'):
-        return SponsorController.index(request)
-    elif(request.method == 'POST'):
-        return SponsorController.create(request)
+    return SponsorController.index(request)
 
 
 @api.route('/sponsors/<id>', methods=['GET', 'PATCH', 'PUT', 'DELETE'])
@@ -796,7 +819,7 @@ def feeds(*args, **kwargs):
 def feeds_banned(feed_id, *args, **kwargs):
     user = kwargs['user'].as_dict()
     if (user['role_id'] != ROLE['admin']):
-        return 'unauthorized'
+        return Response(json.dumps({'message': 'unauthorized'}), status=401, mimetype='application/json')
     else: 
         return FeedController.bannedfeeds(feed_id)
 
@@ -908,7 +931,7 @@ def speaker_candidate_logs(*args, **kwargs):
 def send_notification(*args, **kwargs):
     user = kwargs['user'].as_dict()
     if (user['role_id'] != ROLE['admin']):
-        return 'unauthorized'
+        return Response(json.dumps({'message': 'unauthorized'}), status=401, mimetype='application/json')
     else:
         return AdminController.send_single_notification(request, user)
 
@@ -918,7 +941,7 @@ def send_notification(*args, **kwargs):
 def broadcast_notification(*args, **kwargs):
     user = kwargs['user'].as_dict()
     if (user['role_id'] != ROLE['admin']):
-        return 'unauthorized'
+        return Response(json.dumps({'message': 'unauthorized'}), status=401, mimetype='application/json')
     else:
         return AdminController.broadcast_notification(request, user)
 
@@ -928,7 +951,7 @@ def broadcast_notification(*args, **kwargs):
 def send_email(*args, **kwargs):
     user = kwargs['user'].as_dict()
     if (user['role_id'] != ROLE['admin']):
-        return 'unauthorized'
+        return Response(json.dumps({'message': 'unauthorized'}), status=401, mimetype='application/json')
     else:
         return AdminController.send_email(request, user)
 
@@ -1007,7 +1030,6 @@ def order_verification_general (*args, **kwargs):
     else:
         return OrderVerificationController.create(request)
 
-
 @api.route('/order-verification/<id>', methods=['PUT', 'PATCH', 'GET', 'DELETE'])
 @token_required
 def order_verification_id(id, *args, **kwargs):
@@ -1025,14 +1047,96 @@ def verify_payment(id, *args, **kwargs):
     user = kwargs['user'].as_dict()
     if user['role_id'] == ROLE['admin']:
         return OrderVerificationController.verify(id, request)
-    return 'Unauthorized'
+    return Response(json.dumps({'message': 'unauthorized'}), status=401, mimetype='application/json')
+
+
+
+@api.route('/confirm-email/resend', methods=['POST'])
+def send_mailgun():
+    return UserController.send_confirmation_email(request)
+
+@api.route('/mail/reset-password', methods=['POST'])
+def mail_reset_password():
+    return UserController.send_reset_password(request)
+
+@api.route('/reset_password', methods=['POST'])
+def reset_password(*args, **kwargs):
+    return UserController.reset_password(request)
+
 
 #Hackaton API
-
 @api.route('/hackaton/team', methods=['GET', 'POST'])
 @token_required
 def get_hackaton_team(*args, **kwargs):
     user = kwargs['user'].as_dict()
-    if user['role_id'] == ROLE['admin'] or user['role_id'] == ROLE['hackaton']:
+    if user['role_id'] == ROLE['hackaton']:
         return HackatonController.get_team(request, user)
-    return 'Unauthorized'
+    return Response(json.dumps({'message': 'unauthorized'}), status=401, mimetype='application/json')
+    
+
+@api.route('/hackaton', methods=['GET', 'POST'])
+def get_all_hackaton_team(*args, **kwargs):
+    return HackatonController.get_all(request)
+
+@api.route('/hackaton/team/<id>', methods=['GET', 'PUT', 'PATCH'])
+@token_required
+def update_hackaton(id, *args, **kwargs):
+    user = kwargs['user'].as_dict()
+    if (request.method == 'PUT' or request.method == 'PATCH'):
+        if user['role_id'] == ROLE['hackaton']:
+            return HackatonController.update_team(request, id)
+        return Response(json.dumps({'message': 'unauthorized'}), status=401, mimetype='application/json')
+    else:
+        return HackatonController.show(request, id)
+
+@api.route('/hackaton/team/logo/<id>', methods=['PUT', 'PATCH'])
+@token_required
+def update_hackaton_logo(id, *args, **kwargs):
+    user = kwargs['user'].as_dict()
+    if user['role_id'] == ROLE['hackaton']:
+        return HackatonController.update_team_logo(request, id)
+    return Response(json.dumps({'message': 'unauthorized'}), status=401, mimetype='application/json')
+    
+
+# User Feedback API
+
+@api.route('/user-feedback', methods=['GET', 'POST'])
+@token_required
+def user_feedback (*args, **kwargs):
+    user = kwargs['user'].as_dict()
+    if (request.method == 'GET'):
+        return UserFeedbackController.index(user)
+    else:
+        return UserFeedbackController.create(user, request)
+
+@api.route('/user-feedback/<id>', methods=['GET'])
+@token_required
+def user_feedback_show (id, *args, **kwargs):
+    user = kwargs['user'].as_dict()
+    return UserFeedbackController.show(id, user) 
+
+
+@api.route('/partner/pj', methods=['POST'])
+@token_required
+def grant_partner_pj(*args, **kwargs):
+    return PartnerPjController.grant(request)
+
+
+@api.route('/partner/info', methods=['GET'])
+@token_required
+def get_partner_info(*args, **kwargs):
+    user = kwargs['user'].as_dict()
+    return PartnerPjController.get_info(user, request)
+
+@api.route('/referal/<id>/info', methods=['GET'])
+@token_required
+def get_referal_info(id, *args, **kwargs):
+    user = kwargs['user']
+    if user.role_id == ROLE['admin']:
+        return PartnerPjController.admin_get_info(id)  
+    return Response(json.dumps({'message': 'unauthorized'}), status=401, mimetype='application/json')
+    
+
+@api.route('/eventbrite/hook', methods=['POST'])
+def event_brite_hook():
+    return EventBriteController.hook(request)

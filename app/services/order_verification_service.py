@@ -1,9 +1,10 @@
 import os
 import datetime
-from app.models import db
+from app.models import db, mail
 from sqlalchemy.exc import SQLAlchemyError
 # import model class
 from app.models.order import Order
+from app.models.email_templates.email_purchase import EmailPurchase
 from app.models.order_details import OrderDetails
 from app.models.user import User
 from app.models.payment import Payment
@@ -14,7 +15,9 @@ from app.models.booth import Booth
 from app.models.user_booth import UserBooth
 from app.models.hacker_team import HackerTeam
 from app.models.user_hacker import UserHacker
+from app.models.redeem_code import RedeemCode
 from app.services.base_service import BaseService
+from app.services.email_service import EmailService
 from app.builders.response_builder import ResponseBuilder
 from app.services.user_ticket_service import UserTicketService
 from app.services.redeem_code_service import RedeemCodeService
@@ -24,6 +27,7 @@ from PIL import Image
 from app.configs.constants import IMAGE_QUALITY, ROLE
 from app.services.helper import Helper
 from app.configs.constants import TICKET_TYPES
+from app.configs.settings import LOCAL_TIME_ZONE
 from werkzeug import secure_filename
 
 
@@ -34,10 +38,12 @@ class OrderVerificationService(BaseService):
 		_result = []
 		for entry in orderverifications:
 			data = entry.as_dict()
+			data = self.transformTimeZone(data)
 			if data['payment_proof']:
 				data['payment_proof'] = Helper().url_helper(data['payment_proof'], current_app.config['GET_DEST'])
 			else:
 				data['payment_proof'] = ""
+			data['payment'] = db.session.query(Payment).filter_by(order_id=entry.order_id).first().as_dict()
 			data['user'] = entry.user.include_photos().as_dict()
 			_result.append(data)
 		return _result
@@ -56,15 +62,27 @@ class OrderVerificationService(BaseService):
 			})
 		else:
 			orderverification = OrderVerification()
-			order = db.session.query(Order).filter_by(id=payload['order_id']).first()
+			order_query = db.session.query(Order).filter_by(id=payload['order_id'])
+			payment_query = db.session.query(Payment).filter_by(order_id=payload['order_id'])
+			order = order_query.first()
 			orderverification.user_id = order.user_id
 			orderverification.order_id = payload['order_id']
 			orderverification.payment_proof = payment_proof
+			order_query.update({
+				'status': 'in progress',
+				'updated_at': datetime.datetime.now()
+			})
+			payment_query.update({
+				'transaction_status': 'in progress',
+				'updated_at': datetime.datetime.now()
+			})
 			db.session.add(orderverification)
 		try:
 			db.session.commit()
 			result = orderverification.as_dict()
 			result['payment_proof'] = Helper().url_helper(result['payment_proof'], current_app.config['GET_DEST'])
+			if orderverification:
+				send_notification = FCMService().send_single_notification('Payment Status', 'Payment proof have been uploaded, your payment is being processed', order.user_id, ROLE['admin'])
 			return response.set_data(result).set_message('Data created succesfully').build()
 		except SQLAlchemyError as e:
 			data = e.orig.args
@@ -149,13 +167,14 @@ class OrderVerificationService(BaseService):
 		db.session.add(userbooth)
 		db.session.commit()
 
-	def create_hackaton (self, user):
+	def create_hackaton (self, user, ticket_id, hacker_team_name=''):
 		hacker_team = HackerTeam()
-		hacker_team.name = 'Your team name here'
+		hacker_team.name = hacker_team_name
 		hacker_team.logo = None
 		hacker_team.project_name = 'Your project name here'
-		hacker_team.project_url = None
-		hacker_team.theme = None
+		hacker_team.project_url = 'Project name'
+		hacker_team.theme = 'Project link'
+		hacker_team.ticket_id = ticket_id
 		db.session.add(hacker_team)
 		db.session.commit()
 		userhacker = UserHacker()
@@ -165,14 +184,16 @@ class OrderVerificationService(BaseService):
 		db.session.commit()
 		return hacker_team.id
 
-	def verify(self, id):
+	def admin_verify(self, order_id, request, hacker_team_name=None):
 		response = ResponseBuilder()
-		orderverification_query = db.session.query(OrderVerification).filter_by(id=id)
-		orderverification = orderverification_query.first()
-		if orderverification.is_used is not 1:
-			user_query = db.session.query(User).filter_by(id=orderverification.user_id)
+		emailservice = EmailService()		
+		order_query = db.session.query(Order).filter_by(id=order_id)
+		order = order_query.first()
+		if order.status != 'paid':
+			user_query = db.session.query(User).filter_by(id=order.user_id)
 			user = user_query.first()
-			items = db.session.query(OrderDetails).filter_by(order_id=orderverification.order_id).all()
+			items = db.session.query(OrderDetails).filter_by(order_id=order.id).all()
+			url_invoice = request.url_root + '/invoices/'+ order.id
 			if items[0].ticket.type == TICKET_TYPES['exhibitor']:
 				payload = {}
 				payload['user_id'] = user.id
@@ -186,12 +207,17 @@ class OrderVerificationService(BaseService):
 				redeem_payload['ticket_id'] = items[0].ticket_id
 				redeem_payload['codeable_id'] = user.id
 				RedeemCodeService().purchase_user_redeems(redeem_payload)
+				get_codes = db.session.query(RedeemCode).filter_by(codeable_type='user', codeable_id=user.id).all()
+				mail_template = EmailPurchase()
+				template = mail_template.set_invoice_path(order.id).set_redeem_code(get_codes).build()
+				email = emailservice.set_recipient(user.email).set_subject('Congratulations !! you received exhibitor code').set_sender('noreply@devsummit.io').set_html(template).build()
+				mail.send(email)
 			elif items[0].ticket.type == TICKET_TYPES['hackaton']:
 				payload = {}
 				payload['user_id'] = user.id
 				payload['ticket_id'] = items[0].ticket_id
 				UserTicketService().create(payload)
-				hackerteam_id = self.create_hackaton(user)
+				hackerteam_id = self.create_hackaton(user, items[0].ticket_id, hacker_team_name)
 				user_query.update({
 					'role_id': ROLE['hackaton']
 				})
@@ -200,19 +226,119 @@ class OrderVerificationService(BaseService):
 				redeem_payload['codeable_id'] = hackerteam_id
 				redeem_payload['count'] = items[0].ticket.quota
 				RedeemCodeService().create(redeem_payload)
+				get_codes = db.session.query(RedeemCode).filter_by(codeable_type='hackaton', codeable_id=hackerteam_id).all()
+				mail_template = EmailPurchase()
+				template = mail_template.set_invoice_path(order.id).set_redeem_code(get_codes).build()
+				email = emailservice.set_recipient(user.email).set_subject('Congratulations !! you received hackaton code').set_sender('noreply@devsummit.io').set_html(template).build()
+				mail.send(email)
 			else:
+				result = None
 				for item in items:
 					for i in range(0, item.count):
 						payload = {}
 						payload['user_id'] = user.id
 						payload['ticket_id'] = item.ticket_id
-						UserTicketService().create(payload)
+						result = UserTicketService().create(payload)
+				if (result and (not result['error'])):
+					mail_template = EmailPurchase()
+					template = mail_template.set_invoice_path(order.id).build()
+					email = emailservice.set_recipient(user.email).set_subject('Devsummit Ticket Invoice').set_sender('noreply@devsummit.io').set_html(template).build()
+					mail.send(email)
+
+			order_query.update({
+				'status': 'paid'
+			})
+			payment_query = db.session.query(Payment).filter_by(order_id=order.id)
+			payment_query.update({
+				'transaction_status': 'captured'
+			})
+			db.session.commit()
+			send_notification = FCMService().send_single_notification('Payment Status', 'Your payment has been verified', user.id, ROLE['admin'])
+			
+			return response.set_data(None).set_message('ticket purchased').build()
+		else:
+			return response.set_data(None).set_error(True).set_message('This payment has already verified').build()
+
+
+	def verify(self, id, request, hacker_team_name=None):
+		response = ResponseBuilder()
+		emailservice = EmailService()		
+		orderverification_query = db.session.query(OrderVerification).filter_by(id=id)
+		orderverification = orderverification_query.first()
+		if orderverification.is_used is not 1:
+			user_query = db.session.query(User).filter_by(id=orderverification.user_id)
+			user = user_query.first()
+			items = db.session.query(OrderDetails).filter_by(order_id=orderverification.order_id).all()
+			url_invoice = request.url_root + '/invoices/'+ orderverification.order_id
+			if items[0].ticket.type == TICKET_TYPES['exhibitor']:
+				payload = {}
+				payload['user_id'] = user.id
+				payload['ticket_id'] = items[0].ticket_id
+				UserTicketService().create(payload)
+				self.create_booth(user)
+				user_query.update({
+					'role_id': ROLE['booth']
+				})
+				redeem_payload = {}
+				redeem_payload['ticket_id'] = items[0].ticket_id
+				redeem_payload['codeable_id'] = user.id
+				RedeemCodeService().purchase_user_redeems(redeem_payload)
+				get_codes = db.session.query(RedeemCode).filter_by(codeable_type='user', codeable_id=user.id).all()
+				code = []
+				for get_code in get_codes:
+					code.append("<li>%s</li>" %(get_code.code))
+				li = ''.join(code)
+				template = "<h3>You have complete the payment with order_id = %s</h3><h4>Here are the redeem codes for claiming full 3 days ticket at devsummit event as described in the package information : </h4>%s<h3>Use the above code to claim your ticket</h3><h3>Thank you for your purchase</h3>" %(orderverification.order_id, li)
+				template += "<h4>And here is your Invoice:</h4>"
+				template += '<a href="'+ url_invoice +'">Klik here to show the invoice</a>'
+				email = emailservice.set_recipient(user.email).set_subject('Congratulations !! you received exhibitor code').set_sender('noreply@devsummit.io').set_html(template).build()
+				mail.send(email)
+			elif items[0].ticket.type == TICKET_TYPES['hackaton']:
+				payload = {}
+				payload['user_id'] = user.id
+				payload['ticket_id'] = items[0].ticket_id
+				UserTicketService().create(payload)
+				hackerteam_id = self.create_hackaton(user, items[0].ticket_id, hacker_team_name)
+				user_query.update({
+					'role_id': ROLE['hackaton']
+				})
+				redeem_payload = {}
+				redeem_payload['codeable_type'] = TICKET_TYPES['hackaton']
+				redeem_payload['codeable_id'] = hackerteam_id
+				redeem_payload['count'] = items[0].ticket.quota
+				RedeemCodeService().create(redeem_payload)
+				get_codes = db.session.query(RedeemCode).filter_by(codeable_type='hackaton', codeable_id=hackerteam_id).all()
+				code = []
+				for get_code in get_codes:
+					code.append("<li>%s</li>" %(get_code.code))
+				li = ''.join(code)
+				template = "<h3>You have complete the payment with order_id = %s</h3><h4>Here your redeem codes : </h4>%s<h3>Share the above code to your teammate, and put it into redeem code menu to let them join your team and claim their ticket</h3><h3>Thank you for your purchase</h3>" %(orderverification.order_id, li)
+				template += "<h4>And here is your Invoice:</h4>"
+				template += '<a href="'+ url_invoice +'">Klik here to show the invoice</a>'
+				email = emailservice.set_recipient(user.email).set_subject('Congratulations !! you received hackaton code').set_sender('noreply@devsummit.io').set_html(template).build()
+				mail.send(email)
+			else:
+				result = None
+				for item in items:
+					for i in range(0, item.count):
+						payload = {}
+						payload['user_id'] = user.id
+						payload['ticket_id'] = item.ticket_id
+						result = UserTicketService().create(payload)
+				if (result and (not result['error'])):
+					template = "<h3>Congratulation! you have the previlege to attend Indonesia Developer Summit</h3>"
+					template += "<h4>Here is your Invoice:</h4>"
+					template += '<a href="'+ url_invoice +'">Klik here to show the invoice</a>'
+					template += "<h5>Thank you.</h5>"
+					email = emailservice.set_recipient(user.email).set_subject('Devsummit Ticket Invoice').set_sender('noreply@devsummit.io').set_html(template).build()
+					mail.send(email)
+
 			orderverification_query.update({
 				'is_used': 1
 			})
 			payment_query = db.session.query(Payment).filter_by(order_id=orderverification.order_id)
 			payment_query.update({
-				'transaction_status': 'capture'
+				'transaction_status': 'captured'
 			})
 			completed_order = db.session.query(Order).filter_by(id=orderverification.order_id)
 			completed_order.update({
@@ -220,6 +346,15 @@ class OrderVerificationService(BaseService):
 			})
 			db.session.commit()
 			send_notification = FCMService().send_single_notification('Payment Status', 'Your payment has been verified', user.id, ROLE['admin'])
+			
 			return response.set_data(None).set_message('ticket purchased').build()
 		else:
-			return response.set_data(None).set_message('This payment has already verified').build()
+			return response.set_data(None).set_error(True).set_message('This payment has already verified').build()
+
+	def transformTimeZone(self, obj):
+		entry = obj
+		created_at_timezoned = datetime.datetime.strptime(entry['created_at'], "%Y-%m-%d %H:%M:%S") + datetime.timedelta(hours=LOCAL_TIME_ZONE)
+		entry['created_at'] = str(created_at_timezoned).rsplit('.', maxsplit=1)[0] + " WIB"
+		updated_at_timezoned = datetime.datetime.strptime(entry['updated_at'], "%Y-%m-%d %H:%M:%S") + datetime.timedelta(hours=LOCAL_TIME_ZONE)
+		entry['updated_at'] = str(updated_at_timezoned).rsplit('.', maxsplit=1)[0] + " WIB"
+		return entry
