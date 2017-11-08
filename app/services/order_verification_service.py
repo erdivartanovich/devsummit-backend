@@ -260,6 +260,7 @@ class OrderVerificationService(BaseService):
 		emailservice = EmailService()		
 		orderverification_query = db.session.query(OrderVerification).filter_by(id=id)
 		orderverification = orderverification_query.first()
+		order = orderverification.order
 		if orderverification.is_used is not 1:
 			user_query = db.session.query(User).filter_by(id=orderverification.user_id)
 			user = user_query.first()
