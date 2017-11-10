@@ -11,7 +11,7 @@
     {{ super() }}
     <h1>
         Attendees
-        <small>List of registered attendees</small>
+        <small>User Who Have Successfully Get Their Ticket</small>
     </h1>
 {% endblock %}
 
@@ -28,9 +28,11 @@
                 <thead>
                 <tr>
                     <th>Name</th>
+                    <th>Username</th>
                     <th>Email</th>
-                    <th>Points</th>
-                    <th>Action</th>
+                    <th>Order Id</th>
+                    <th>Referal Code</th>
+                    <th>Ticket Code</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -40,13 +42,31 @@
                             <a href="" id='atd-{{ attendee.id }}' class="attendees-name">{{ attendee.last_name + ', ' + attendee.first_name|e }}</a> 
                         </td>
                         <td>
+                            {{ attendee.username|e }}
+                        </td>
+                        <td>
                             {{ attendee.email|e }}
                         </td>
                         <td>
-                            {{ attendee.points|e }}
+                            {% for order in attendee.orders %}
+                                {{ order.id|e }} <br/>
+                            {% endfor %}
+                        </td>
                         </td>
                         <td>
-                            <img src="{{attendee.photos[0].url|e}}" height="120px" width="100px" alt='user photo'>
+                            {% for order in attendee.orders %}
+                                {% if order.referal %}
+                                    {{ order.referal.referal_code|e }} <br/>
+                                {% else %}
+                                    - <br/>
+                                {% endif %}
+                            {% endfor %}
+                        </td>
+                        </td>
+                        <td>
+                            {% for ticket in attendee.tickets %}
+                                {{ ticket.ticket_code|e }} <br/>
+                            {% endfor %}
                         </td>
                     </tr>
                     {% endfor %}

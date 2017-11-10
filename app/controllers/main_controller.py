@@ -50,8 +50,13 @@ class MainController(BaseController):
         return render_template('admin/base/overview.html', overview=overview)
 
     def getAttendees():
-        attendees = attendeeservice.get(request)
+        attendees = userservice.get_attendees()
         return render_template('admin/attendees/attendees.html', attendees=attendees['data'])
+
+
+    def getPurchasedAttendees():
+        purchased_attendees = userservice.get_purchased_attendees()
+        return render_template('admin/attendees/purchased_attendees.html', attendees=purchased_attendees['data'])
 
     def getHackatonProposal():
         hackatonproposals = hackatonproposalservice.get_except('verified')
