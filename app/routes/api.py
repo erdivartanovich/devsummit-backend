@@ -164,13 +164,21 @@ def beacon(*args, **kwargs):
 
 
 # Beacon route by id
-@api.route('/beacons/<id>', methods=['PUT', 'PATCH', 'DELETE'])
+@api.route('/beacons/<id>', methods=['GET', 'PUT', 'PATCH', 'DELETE'])
 @token_required
 def beacon_id(id, *args, **kwargs):
     if(request.method == 'PUT' or request.method == 'PATCH'):
         return BeaconController.update(request, id)
     elif(request.method == 'DELETE'):
         return BeaconController.delete(id)
+    elif(request.method == 'GET'):
+        return BeaconController.show(id)
+
+
+@api.route('/beacons/mapping/update', methods=['POST'])
+@token_required
+def beacon_map(*args, **kwargs):
+    return BeaconController.update_mapping(request)
 
 
 # Spot api
@@ -1254,11 +1262,13 @@ def questioner_index(*args, **kwargs):
         return QuestionerController.index()
     return QuestionerController.patch(None, request)
 
-@api.route('/questioners/<id>', methods=['GET', 'POST'])
+@api.route('/questioners/<id>', methods=['GET', 'POST', 'DELETE'])
 @token_required
 def questioners_show(id, *args, **kwargs):
     if request.method=="GET":
         return QuestionerController.show(id)
+    elif request.method=='DELETE':
+        return QuestionerController.delete(id)
     return QuestionerController.patch(id, request)
 
 @api.route('/questioners/<id>/answers', methods=['POST'])

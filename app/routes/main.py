@@ -252,3 +252,20 @@ def reset_password_user():
 @main.route('/referal_details/<id>')
 def referal_info(id):
     return MainController.get_referal_info(id)
+
+@main.route('/questioners')
+def questioner_list():
+    return render_template('admin/questioners/questioners.html')
+@main.route('/regions')
+def region_list():
+    return MainController.region_list()
+
+@main.route('/regions/<id>')
+def region_show(id):
+    return MainController.region_show(id)
+
+@main.route('/regions/create')
+def region_add():
+    return MainController.region_add()
+
+    
