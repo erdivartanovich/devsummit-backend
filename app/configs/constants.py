@@ -15,8 +15,8 @@ TICKET_TYPES = {
 }
 
 SLOT = {
-	'community': 400,
-	'commercial': 3600
+    'community': 400,
+    'commercial': 3600
 }
 
 EVENT_TYPES = {
