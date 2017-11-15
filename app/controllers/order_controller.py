@@ -58,6 +58,13 @@ class OrderController(BaseController):
 		return BaseController.send_response_api(None, 'order with id: ' + id + ' has been succesfully deleted')
 	
 	@staticmethod
+	def ban(id):
+		order = orderservice.ban(id)
+		if order['error']:
+			return BaseController.send_response_api(None, 'order not found')
+		return BaseController.send_response_api(None, 'order with id: ' + id + ' has been succesfully banned')
+	
+	@staticmethod
 	def unverified_order():
 		orders = orderservice.unverified_order()
 		if orders['error']:
