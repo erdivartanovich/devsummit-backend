@@ -59,7 +59,7 @@ class OrderService():
 
 	def unverified_order(self):
 		response = ResponseBuilder()
-		orders = db.session.query(Order).filter(Order.status != 'paid').order_by(Order.created_at.desc()).all()
+		orders = db.session.query(Order).filter(Order.status != 'paid', Order.banned == False).order_by(Order.created_at.desc()).all()
 		results = []
 		for order in orders:
 			data = order.as_dict()
@@ -195,6 +195,25 @@ class OrderService():
 			}
 		else:
 			data = 'data not found'
+			return {
+				'error': True,
+				'data': data
+			}
+
+	def ban(self, id):
+		self.model_order = db.session.query(Order).filter_by(id=id)
+		if self.model_order.first() is not None:
+			self.model_order.update({
+				'banned': '1'
+			})
+			db.session.commit()
+			data = self.model_order.first().as_dict()
+			return {
+				'error': False,
+				'data': data
+			}
+		else:
+			data = 'order not found'
 			return {
 				'error': True,
 				'data': data
