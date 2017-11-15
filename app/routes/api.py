@@ -1263,7 +1263,7 @@ def event_brite_hook():
 @token_required
 def questioner_index(*args, **kwargs):
     if request.method=="GET":
-        return QuestionerController.index()
+        return QuestionerController.index(request)
     return QuestionerController.patch(None, request)
 
 @api.route('/questioners/<id>', methods=['GET', 'POST', 'DELETE'])
