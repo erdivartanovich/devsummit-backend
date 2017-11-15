@@ -32,6 +32,7 @@
                     <th>Name</th>
                     <th>Username</th>
                     <th>Date Created</th>
+                    <th>Status</th>
                     <th>Action</th>
                 </tr>
                 </thead>
@@ -57,10 +58,16 @@
                         <td>
                             {{ order.created_at }}
                         </td>
+                        <td>
+                            {{ order.status }}
+                        </td>
                          <td>
                             <button id='bte-{{ order.id }}' type="button" class="btn btn-sm btn-info btn-verify" data-toggle="modal" data-target="#modal-verify">
                                 Verify
                             </button>
+                            <a href="" order-id-attribute="{{ order.id }}" type="button" class="btn btn-sm btn-info btn-ban-order">
+                                Ban Order
+                            </a>
                         </td>
                     </tr>
                     {% endfor %}
@@ -91,6 +98,21 @@
             });
         }
     });
+
+    /* Ban Order BTN */
+    $('.btn-ban-order').click(function (event) {
+        event.preventDefault()
+        const id = $(this).attr('order-id-attribute')
+        if (confirm('Ban this order? This action will ban the choosen order.')) {
+            dsa.delete('orders/' + id + '/ban', function(result) {
+                if(result.meta.success) {
+                    window.location = '/admin-verification';
+                }
+            });
+         } else {
+            alert('Canceled')
+        }
+    })
 
     $(function () {
         $('#admin-verification-list1').DataTable();
