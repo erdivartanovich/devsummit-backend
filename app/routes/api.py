@@ -253,6 +253,10 @@ def orders_id(id, *args, **kwargs):
 def orders_details(order_id, *args, **kwargs):
     return OrderDetailsController.index(order_id)
 
+@api.route('/orders/<id>/ban', methods=['DELETE'])
+@token_required
+def ban_order(id, *args, **kwargs):
+    return OrderController.ban(id)
 
 @api.route('/orders/<order_id>/details', methods=['POST'])
 @token_required
@@ -1259,7 +1263,7 @@ def event_brite_hook():
 @token_required
 def questioner_index(*args, **kwargs):
     if request.method=="GET":
-        return QuestionerController.index()
+        return QuestionerController.index(request)
     return QuestionerController.patch(None, request)
 
 @api.route('/questioners/<id>', methods=['GET', 'POST', 'DELETE'])
