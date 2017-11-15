@@ -9,7 +9,7 @@ class Order(db.Model, BaseModel):
 	# table name
 	__tablename__ = 'orders'
 	# displayed fields
-	visible = ['id', 'user_id', 'referal_id', 'status', 'created_at', 'updated_at']
+	visible = ['id', 'user_id', 'referal_id', 'status', 'banned', 'created_at', 'updated_at']
 
 	# columns definitions
 	id = db.Column(db.String, primary_key=True)
@@ -24,6 +24,7 @@ class Order(db.Model, BaseModel):
 		db.ForeignKey('referals.id'),
 		nullable=False
 	)
+	banned = db.Column(db.Boolean())
 	referal = db.relationship('Referal')
 	status = db.Column(db.String)
 	created_at = db.Column(db.DateTime)
