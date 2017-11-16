@@ -26,6 +26,7 @@ class Booth(db.Model, BaseModel):
 	stage = db.relationship('Stage')
 	summary = db.Column(db.Text)
 	type = db.Column(db.String)
+	channel_id = db.Column(db.String)
 	points = db.Column(db.Integer)
 	name = db.Column(db.String(255))
 	url = db.Column(db.String(255))
