@@ -27,6 +27,7 @@ from app.services import invoiceservice
 from app.services import packagemanagementservice
 from app.services import tickettransferservice
 from app.services import hackatonproposalservice
+from app.services import checkinservice
 from app.configs.constants import ROLE
 from app.controllers.partner_pj_controller import PartnerPjController
 from app.services import beaconservice
@@ -101,6 +102,10 @@ class MainController(BaseController):
     def getBooths():
         booths = boothservice.get(request)
         return render_template('admin/booths/booths.html', booths=booths['data'])
+    
+    def getCheckinList():
+        checkins = checkinservice.checkin_list(request)
+        return render_template('admin/checkins/index.html', checkins=checkins['data'])
 
     def getSpeakers():
         speakers = speakerservice.get()
