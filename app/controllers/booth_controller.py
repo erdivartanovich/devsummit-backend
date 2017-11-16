@@ -107,3 +107,12 @@ class BoothController(BaseController):
             return BaseController.send_response_api(result['data'], result['message'])
         else:
             return BaseController.send_error_api(result['data'], result['message'])
+    
+    @staticmethod
+    def generate_room(request, booth_id=None):
+        result = boothservice.generate_room(booth_id)
+
+        if not result['error']:
+            return BaseController.send_response_api(result['data'], result['message'])
+        else:
+            return BaseController.send_error_api(result['data'], result['message'])
