@@ -24,10 +24,3 @@ class CheckinService():
             _results.append(data)
 
         return response.set_data(_results).build()
-        # else:
-        #     data = 'data not found'
-        #     return {
-        #         'error': True,
-        #         'data': data
-        #     }   
-
