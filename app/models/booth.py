@@ -9,7 +9,7 @@ class Booth(db.Model, BaseModel):
 	# table name
 	__tablename__ = 'booths'
 	# displayed fields
-	visible = ['id', 'user_id', 'stage_id', 'points', 'summary', 'type', 'logo_url', 'url', 'name', 'created_at', 'updated_at']
+	visible = ['id', 'user_id', 'stage_id', 'points', 'summary', 'type', 'logo_url', 'url', 'name', 'channel_id','created_at', 'updated_at']
 
 	# columns definitions
 	id = db.Column(db.Integer, primary_key=True)
