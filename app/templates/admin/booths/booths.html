@@ -164,7 +164,6 @@
             const id = btd_id.substring(4, btd_id.length);
 
             dsa.patch('booths/' + id + '/generate_room', null, function(result) {
-                console.log(result)
                 if(result['data']['errors']) {
                     alert(result['data']['detailed_messages'])
                 }
