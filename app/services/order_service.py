@@ -1,4 +1,5 @@
 from app.models import db
+from sqlalchemy import or_
 from flask import current_app, request
 from app.services.helper import Helper 
 from app.services.order_verification_service import OrderVerificationService 
@@ -59,7 +60,7 @@ class OrderService():
 
 	def unverified_order(self):
 		response = ResponseBuilder()
-		orders = db.session.query(Order).filter(Order.status != 'paid', Order.banned == False).order_by(Order.created_at.desc()).all()
+		orders = db.session.query(Order).filter(Order.status != 'paid', or_(Order.banned != True, Order.banned == None)).order_by(Order.created_at.desc()).all()
 		results = []
 		for order in orders:
 			data = order.as_dict()

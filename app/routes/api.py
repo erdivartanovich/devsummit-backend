@@ -425,6 +425,13 @@ def transfer_points(*args, **kwargs):
     return 'You cannot transfer points'
 
 
+@api.route('/points/reward', methods=['POST'])
+@token_required
+def reward_point(*args, **kwargs):
+    user = kwargs['user']
+    return PointsController.reward_point(request, user)
+
+
 @api.route('/points/logs', methods=['GET'])
 @token_required
 def transfer_points_log(*args, **kwargs):
