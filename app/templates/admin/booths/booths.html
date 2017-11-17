@@ -33,6 +33,7 @@
                         <th>website</th>
                         <th>Logo</th>
                         <th>Points</th>
+                        <th>Channel ID</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -67,6 +68,18 @@
                         </td>
                         <td>
                             {{ booth.points }}
+                        </td>
+                        <td id='room-{{ booth.id }}'>
+                            {% if booth.channel_id %}
+                                <p>{{ booth.channel_id }}</p>
+                                <button id='btg-{{ booth.id }}' type="button" class="btn btn-sm btn-info btn-generate" disabled>
+                                    Generate Room
+                                </button>
+                            {% else %}
+                                <button id='btg-{{ booth.id }}' type="button" class="btn btn-sm btn-info btn-generate">
+                                    Generate Room
+                                </button>
+                            {% endif %}
                         </td>
                          <td>
                             <button id='bte-{{ booth.id }}' type="button" class="btn btn-sm btn-info btn-edit" data-toggle="modal" data-target="#modal-edit">
@@ -143,6 +156,18 @@
                         select.append(option);
                     }
                 });
+            });
+        });
+
+        $('.btn-generate').click(function(event) {
+            const btd_id = $(this).attr('id');
+            const id = btd_id.substring(4, btd_id.length);
+
+            dsa.patch('booths/' + id + '/generate_room', null, function(result) {
+
+                const data = result['data'];    
+                $("#room-"+id).prepend('<p>'+ data['channel_id'] +'</p>');
+                $("#btg-"+id).attr('disabled', 'disabled');  
             });
         });
 
