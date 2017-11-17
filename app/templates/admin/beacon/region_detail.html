@@ -57,6 +57,10 @@
 
                     </select>
                 </div>
+                <div class="form-group">
+                    <label for="point">Point</label>
+                    <input type="number" class="form-control" id="point" placeholder="Enter point" value={{ beacon.point }}>
+                </div>
                 
             </div>
             <!-- /.box-body -->
@@ -77,9 +81,12 @@
         var type_id = $('#select-type-id').find(":selected").val();
         if (type === 'other' || type === 'entrance')
             type_id = '0';
+        if ($('#point').val().trim() < 1)
+            point = null
         payloads = {
             'major': $('#major').val(),
             'minor': $('#minor').val(),
+            'point': $('#point').val(),
             'description': $('#description').val(),
             'type': type,
             'type_id': type_id

@@ -61,6 +61,7 @@ from app.controllers.hackaton_proposal_controller import HackatonProposalControl
 from app.controllers.booth_checkins_controller import BoothCheckinController
 from app.services.slack_service import SlackService
 from app.controllers.questioner_controller import QuestionerController
+from app.controllers.checkin_controller import CheckinController
 from app.configs.constants import ROLE
 
 
@@ -424,6 +425,13 @@ def transfer_points(*args, **kwargs):
     return 'You cannot transfer points'
 
 
+@api.route('/points/reward', methods=['POST'])
+@token_required
+def reward_point(*args, **kwargs):
+    user = kwargs['user']
+    return PointsController.reward_point(request, user)
+
+
 @api.route('/points/logs', methods=['GET'])
 @token_required
 def transfer_points_log(*args, **kwargs):
@@ -552,6 +560,11 @@ def user_tickets(*args, **kwargs):
 def check_in(*args, **kwargs):
     return UserTicketController.check_in(request)
 
+# Get check-in list
+@api.route('/admin/checkin-list', methods=['GET'])
+@token_required
+def get_check_in(*args, **kwargs):
+    return CheckinController.index(request)
 
 @api.route('/boothcheckin', methods=['POST'])
 @token_required

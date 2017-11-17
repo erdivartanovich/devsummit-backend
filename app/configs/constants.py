@@ -89,6 +89,6 @@ MAILGUN = {
 }
 
 QISCUS = {
-    'BASE_URL': 'http://mhvps-bp0xgcrzmivyhuv.qiscus.com/api/v2/rest/',
-    'SDK_SECRET': 'c23fb2e7ff1e69e1287cfac6b8084a87'
+    'BASE_URL': 'http://devsummit-qlqwpfmuvmj.qiscus.com/api/v2/rest/',
+    'SDK_SECRET': '047374a736c7472685ed7dcb7e3d97da'
 }

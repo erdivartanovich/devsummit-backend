@@ -77,15 +77,16 @@ class UserTicketService():
             }
 
     def show(self, user_id):
-        user_tickets = BaseModel.as_list(db.session.query(UserTicket).filter_by(user_id=user_id).all())
+        response = ResponseBuilder()
+        results = []
+        subquery = db.session.query(CheckIn.user_ticket_id).all()
+        user_tickets = db.session.query(UserTicket).filter(UserTicket.user_id == user_id, UserTicket.id.notin_(subquery)).all()
+        for ticket in user_tickets:
+            results.append(ticket.as_dict())
         if user_tickets is not None:
-            return user_tickets
+            return response.set_data(results).set_message('ticket retrieved').build()
         else:
-            data = 'data not found'
-            return {
-                'error': True,
-                'data': data
-            }   
+            return response.set_data('data not found').set_message('data not found').set_error(True).build()
 
     @staticmethod
     def create(payload):

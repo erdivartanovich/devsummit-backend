@@ -6,10 +6,10 @@ class UserTicketController(BaseController):
 
     @staticmethod
     def show(user_id):
-        user_ticket = userticketservice.show(user_id)
-        if user_ticket is None:
-            return BaseController.send_error_api(None, 'ticket not found')
-        return BaseController.send_response_api(user_ticket, 'tickets retrieved successfully')
+        result = userticketservice.show(user_id)
+        if result['error']:
+            return BaseController.send_error_api(result['data'], result['message'])
+        return BaseController.send_response_api(result['data'], result['message'])
 
     @staticmethod
     def update(user_id, request):

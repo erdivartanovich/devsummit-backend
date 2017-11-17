@@ -23,6 +23,7 @@ class BeaconController(BaseController):
 	def create(request):
 		major = request.json['major'] if 'major' in request.json else None
 		minor = request.json['minor'] if 'minor' in request.json else None
+		point = request.json['point'] if 'point' in request.json else None
 		type = request.json['type'] if 'type' in request.json else None
 		type_id = request.json['type_id'] if 'type_id' in request.json else None
 		description = request.json['description'] if 'description' in request.json else ''
@@ -30,6 +31,7 @@ class BeaconController(BaseController):
 			payloads = {
 				'major': major,
 				'minor': minor,
+				'point': point,
 				'type': type,
 				'type_id': type_id,
 				'description': description,
@@ -48,6 +50,7 @@ class BeaconController(BaseController):
 	def update(request, id):
 		major = request.json['major'] if 'major' in request.json else None
 		minor = request.json['minor'] if 'minor' in request.json else None
+		point = request.json['point'] if 'point' in request.json else None
 		type = request.json['type'] if 'type' in request.json else None
 		type_id = request.json['type_id'] if 'type_id' in request.json else None
 		description = request.json['description'] if 'description' in request.json else ''
@@ -56,6 +59,7 @@ class BeaconController(BaseController):
 			payloads = {
 				'major': major,
 				'minor': minor,
+				'point': point,
 				'type': type,
 				'type_id': type_id,
 				'description': description,

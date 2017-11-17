@@ -58,6 +58,10 @@
 
                     </select>
                 </div>
+                <div class="form-group">
+                    <label for="description">Point</label>
+                    <input type="text" class="form-control" id="add-point" placeholder="Entry point">
+                </div>
                 
                 
             </div>
@@ -79,9 +83,12 @@
         var type_id = $('#add-select-type-id').find(":selected").val();
         if (type === 'other' || type === 'entrance')
             type_id = '0';
+        if ($('#add-point').val().trim() < 1)
+            point = null
         payloads = {
             'major': $('#add-major').val(),
             'minor': $('#add-minor').val(),
+            'point': $('#add-point').val(),
             'description': $('#add-description').val(),
             'type': type,
             'type_id': type_id
