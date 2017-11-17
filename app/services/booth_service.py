@@ -1,4 +1,5 @@
 import os
+import requests
 import datetime
 from werkzeug import secure_filename
 from app.models import db
@@ -11,12 +12,18 @@ from app.services.base_service import BaseService
 from app.builders.response_builder import ResponseBuilder
 from flask import request, current_app
 from app.services.helper import Helper 
+from app.configs.constants import QISCUS
 
 
 class BoothService(BaseService):
 
 	def __init__(self, perpage): 
 		self.perpage = perpage
+		self.headers = {
+			'Accept': 'application/json',
+			'Content-Type': 'application/json',
+			'qiscus_sdk_secret': QISCUS['SDK_SECRET']
+		}
 
 	def get(self, request):
 		self.total_items = Booth.query.count()
@@ -171,3 +178,40 @@ class BoothService(BaseService):
 		except SQLAlchemyError as e:
 			data = e.orig.args
 			return response.set_data(data).set_error(True).build()
+
+	def generate_room(self, id):
+		response = ResponseBuilder()
+
+		channel_id = None
+		queries = db.session.query(Booth, User).join(User).all()
+		for booth, user in queries:
+			name = booth.name if booth.name is not None else 'Booth Chatroom'
+			logo = booth.logo_url
+
+			endpoint = QISCUS['BASE_URL'] + 'create_room'
+			payloads = {
+				'name': name,
+				'participants': [user.email],
+				'creator': user.email,
+				'avatar_url': logo
+			}
+			result = requests.post(
+					endpoint,
+					headers=self.headers,
+					json=payloads
+			)
+			payload = result.json()
+			channel_id = payload['results']['room_id_str']
+
+		try:
+			self.model_booth = db.session.query(Booth).filter_by(id=id)
+			self.model_booth.update({
+				'channel_id': channel_id,
+			})
+			db.session.commit()
+
+			data = self.model_booth.first().as_dict()
+			return response.set_data(data).build()
+		except SQLAlchemyError as e:
+			data = e.orig.args
+			return response.set_error(True).set_data(data).set_message('sql error').build()			

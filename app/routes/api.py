@@ -374,6 +374,11 @@ def update_booth_logo(*args, **kwargs):
     user = kwargs['user'].as_dict()
     return BoothController.update_logo(request, user)
 
+@api.route('/booths/<booth_id>/generate_room', methods=['PUT', 'PATCH'])
+@token_required
+def generate_token(booth_id, *args, **kwargs):
+    
+    return BoothController.generate_room(request, booth_id)
 
 # Point endpoint
 # booth images
