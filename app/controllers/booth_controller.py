@@ -33,7 +33,7 @@ class BoothController(BaseController):
     def update(request, user_id=None, booth_id=None):
         if user_id is not None:
             booth_id = db.session.query(Booth).filter_by(user_id=user_id).first().as_dict()['id']
-        
+
         name = request.form['name'] if 'name' in request.form else ''
         stage_id = request.form['stage_id'] if 'stage_id' in request.form else None
         if stage_id:
@@ -88,7 +88,7 @@ class BoothController(BaseController):
             return BaseController.send_error_api(result['data'], result['message'])
         else:
             return BaseController.send_response_api(result['data'], result['message'])
-    
+
     @staticmethod
     def update_logo(request, user):
         image_data = request.files['image_data']
@@ -107,7 +107,7 @@ class BoothController(BaseController):
             return BaseController.send_response_api(result['data'], result['message'])
         else:
             return BaseController.send_error_api(result['data'], result['message'])
-    
+
     @staticmethod
     def generate_room(request, booth_id=None):
         result = boothservice.generate_room(booth_id)

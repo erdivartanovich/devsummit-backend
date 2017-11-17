@@ -181,22 +181,19 @@ class BoothService(BaseService):
 
 	def generate_room(self, id):
 		response = ResponseBuilder()
-		
+
 		channel_id = None
 		queries = db.session.query(Booth, User).join(User).all()
 		for booth, user in queries:
-			email = user.email
 			name = booth.name if booth.name is not None else 'Booth Chatroom'
 			logo = booth.logo_url
-		# booth = db.session.query(Booth).filter_by(id=id).first()
-		# user = db.session.query(User).filter_by(id=booth.user_id).first()
 
 			endpoint = QISCUS['BASE_URL'] + 'create_room'
 			payloads = {
-				'name': booth.name if booth.name is not None else 'Chat room',
+				'name': name,
 				'participants': [user.email],
 				'creator': user.email,
-				'avatar_url': booth.logo_url
+				'avatar_url': logo
 			}
 			result = requests.post(
 					endpoint,
@@ -205,7 +202,7 @@ class BoothService(BaseService):
 			)
 			payload = result.json()
 			channel_id = payload['results']['room_id_str']
-		
+
 		try:
 			self.model_booth = db.session.query(Booth).filter_by(id=id)
 			self.model_booth.update({
