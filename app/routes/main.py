@@ -58,6 +58,9 @@ def get_referals():
 def get_booths():
     return MainController.getBooths()
 
+@main.route('/checkin-list')
+def get_checkin_list():
+    return MainController.getCheckinList()
 
 @main.route('/')
 def login():
