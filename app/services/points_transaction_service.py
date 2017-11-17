@@ -1,6 +1,8 @@
+import datetime
 from app.models import db
 from app.models.booth import Booth
 from app.models.user import User
+from app.models.beacon import Beacon
 from app.builders.response_builder import ResponseBuilder
 from app.models.point_transaction_log import PointTransactionLog
 from sqlalchemy.exc import SQLAlchemyError
@@ -54,3 +56,25 @@ class PointsTransactionService():
 	def get_admin_log(self):
 		logs = db.session.query(PointTransactionLog).all()
 		return logs
+
+	def reward_point(self, payloads, user):
+		response = ResponseBuilder()
+		beacon = db.session.query(Beacon).filter(Beacon.major == payloads['major'], Beacon.minor == payloads['minor']).first()
+		if beacon is None:
+			return response.set_data(None).set_message('beacon not found').set_error(True).build()
+		if beacon.point is None:
+			return response.set_data(None).set_message('no point assigned to this beacon').set_error(True).build()
+		user_query = db.session.query(User).filter(User.id == user.id)
+		curr_point = user.points if user.points else 0
+		user_query.update({
+			'points': curr_point + beacon.point,
+			'updated_at': datetime.datetime.now()
+		})
+		try:
+			db.session.commit()
+			return response.set_data({
+				'points': user.points, 
+				'rewarded': beacon.point
+			}).set_message('point gained').build()
+		except SQLAlchemyError as e:
+			return response.set_error(True).set_data(None).set_message('sql_error').build()
