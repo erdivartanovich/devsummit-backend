@@ -53,6 +53,7 @@ class BeaconService():
 		self.model_beacon = Beacon()
 		self.model_beacon.major = payloads['major']
 		self.model_beacon.minor = payloads['minor']
+		self.model_beacon.point = payloads['point']
 		self.model_beacon.type = payloads['type']
 		self.model_beacon.type_id = payloads['type_id']
 		self.model_beacon.description = payloads['description']
@@ -73,6 +74,7 @@ class BeaconService():
 			self.model_beacon.update({
 				'major': payloads['major'],
 				'minor': payloads['minor'],
+				'point': payloads['point'],
 				'type': payloads['type'],
 				'type_id': payloads['type_id'],
 				'description': payloads['description'],
