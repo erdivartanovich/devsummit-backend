@@ -30,6 +30,7 @@
                 <tr>
                     <th>Major</th>
                     <th>Minor</th>
+                    <th>Point</th>
                     <th>Description</th>
                     <th>Type</th>
                     <th>Type-ID</th>
@@ -43,6 +44,9 @@
                         </td>
                         <td>
                             <a href="/regions/{{ beacon.id }}" id='atd-{{ beacon.id }}' class="beacon-uuid">{{ beacon.minor|e }}</a> 
+                        </td>
+                        <td>
+                            {{ beacon.point|e }} 
                         </td>
                         <td>
                             {{ beacon.description|e }}
