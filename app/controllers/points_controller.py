@@ -27,3 +27,20 @@ class PointsController(BaseController):
 			result = pointtransactionservice.get_booth_log(user['id'])
 
 		return BaseController.send_response_api(BaseModel.as_list(result), 'logs retrieved succesfully')
+
+	@staticmethod
+	def reward_point(request, user):
+		major = request.json['major'] if 'major' in request.json else None
+		minor = request.json['minor'] if 'minor' in request.json else None
+
+		if major and minor:
+			payloads = {
+				'major': major,
+				'minor': minor
+			}
+		else:
+			return BaseController.send_error_api(None, 'invalid payload')
+		result = pointtransactionservice.reward_point(payloads, user)
+		if result['error']:
+			return BaseController.send_response_api(result['data'], result['message'])
+		return BaseController.send_error_api(result['data'], result['message'])
