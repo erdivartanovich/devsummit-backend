@@ -87,3 +87,8 @@ MAILGUN = {
     'key': 'key-cff13ec10ae9301f0867648b2ebe4274',
     'sender': 'Andy <no-replyss@devsummit.io>'
 }
+
+QISCUS = {
+    'BASE_URL': 'http://mhvps-bp0xgcrzmivyhuv.qiscus.com/api/v2/rest/',
+    'SDK_SECRET': 'c23fb2e7ff1e69e1287cfac6b8084a87'
+}
