@@ -4,8 +4,10 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.builders.response_builder import ResponseBuilder
 # import model class
 from app.models.beacon import Beacon
+from app.models.user import User
 from app.models.sponsor import Sponsor
 from app.models.speaker import Speaker
+from app.models.questioner import Questioner
 from app.models.booth import Booth
 from app.models.booth_gallery import BoothGallery
 from app.models.beacon_map_version import BeaconMapVersion
@@ -127,9 +129,14 @@ class BeaconService():
 			exhibitor = db.session.query(Booth).filter(Booth.id == beacon.type_id).first()
 			gallery = self.fetch_booth_gallery(exhibitor.id)
 			result['exhibitor'] = exhibitor.as_dict()
-			result['exhibitor']['gallery'] =[]
+			result['exhibitor']['gallery'] = []
 			for image in gallery:
 				result['exhibitor']['gallery'].append(image.as_dict())
+			questioner = db.session.query(Questioner).filter(Questioner.booth_id == exhibitor.id).first()
+			owner = db.session.query(User).filter(User.id == exhibitor.user_id).first()
+			result['exhibitor']['questioner'] = questioner.as_dict() if questioner else None
+			result['exhibitor']['owner'] = owner.include_photos().as_dict() if owner else None
+
 		elif beacon.type == 'sponsor':
 			result['sponsor'] = db.session.query(Sponsor).filter(Sponsor.id == beacon.type_id).first().as_dict()
 		elif beacon.type == 'speaker':
