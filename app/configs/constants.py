@@ -53,12 +53,12 @@ VA_NUMBER = {
 }
 
 PAYPAL = {
-    'mode': "sandbox",
-    'client_id': "Ac-Ikn76GlVB5tFLwMoFYEl9FGumrB7NYdkicE5bd7Q_QfWmnKDyK_ZlZ7mFB-MlENIQR1fTvcj1Ivdv",
-    'client_secret': "EF23WB7s-mKixitheWRubig7O4JJmMTjmtRxX2xxMfVuarGceOWe8Uda47ORTdrCEshaKhLlmU4rZ1OT",
-    'payee': 'shi77.andy-facilitator@gmail.com',
-    'return_url': 'http://localhost:5000/payment/execute',
-    'cancel_url': 'http://localhost:5000/'
+    'mode': "live",
+    'client_id': "AV5yciJeTgKzD62m7kvePBtCWMIt66LkKc-fAV8oKh3EXY-WKnfZSZS-sLJbK-lEDYhbJpyGBwR673s5",
+    'client_secret': "ECcVoK_ngiZk5iZX2tysVVHpJvN9hSAxTRYwD2TkWEKOIs3xrVXfhxPloceCtDtm5s8hVQ31RTSbdl3x",
+    'payee': 'toopay@taufanaditya.com',
+    'return_url': 'https://api.devsummit.io/payment/execute',
+    'cancel_url': 'https://api.devsummit.io/'
 }
 
 EVENT_BRITE = {
@@ -68,7 +68,7 @@ EVENT_BRITE = {
 
 SLACK = {
     'hook': 'https://hooks.slack.com/services/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',
-    'notification': False 
+    'notification': True
 }
 
 MIDTRANS_API_BASE_URL = 'https://api.sandbox.midtrans.com/v2/'
@@ -79,7 +79,7 @@ SERVER_KEY = 'VT-server-njhqghnFUZbtZgOg9ldNtY0l:'
 IMAGE_QUALITY = 70
 
 # FCM key
-FCM_SERVER_KEY = 'key=AAAA8iNOby4:APA91bGxdjtV_YTm3FnvjUiGJPPartTvM5COQFsubP-kBGP0AbmGBml1WtbYgAKc2-CDNcFGYLl4j0JzJq4AzeZwc47aURd3MTKLW_bLS6FtYokJdgjJcE7rM-9KiPlPJ029S9ua7OUF'
+FCM_SERVER_KEY = 'key=AAAA-YIsKqc:APA91bHWIn3yNFCPcSP4hQKqPYyZLewI8q9AoSWCVH8Qt39rlLP_6c02NuyoNP_o5FhXYi2UNlIV-HbzLct5U3w67Xjvu602YyCzaDbFk4-LJIZxcdl5_YsLkFVfqNExSsjkw9UIbQ_S'
 FCM_GENERAL_TOPIC = '/topics/devsummit_indonesia_2017'
 
 MAILGUN = {
@@ -89,6 +89,6 @@ MAILGUN = {
 }
 
 QISCUS = {
-    'BASE_URL': 'http://mhvps-bp0xgcrzmivyhuv.qiscus.com/api/v2/rest/',
-    'SDK_SECRET': 'c23fb2e7ff1e69e1287cfac6b8084a87'
+    'BASE_URL': 'http://devsummit-qlqwpfmuvmj.qiscus.com/api/v2/rest/',
+    'SDK_SECRET': '047374a736c7472685ed7dcb7e3d97da'
 }
