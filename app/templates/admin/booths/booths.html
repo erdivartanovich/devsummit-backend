@@ -164,10 +164,14 @@
             const id = btd_id.substring(4, btd_id.length);
 
             dsa.patch('booths/' + id + '/generate_room', null, function(result) {
-
-                const data = result['data'];    
-                $("#room-"+id).prepend('<p>'+ data['channel_id'] +'</p>');
-                $("#btg-"+id).attr('disabled', 'disabled');  
+                if(result['data']['errors']) {
+                    alert(result['data']['detailed_messages'])
+                }
+                else {
+                    const data = result['data'];    
+                    $("#room-"+id).prepend('<p>'+ data['channel_id'] +'</p>');
+                    $("#btg-"+id).attr('disabled', 'disabled');
+                }  
             });
         });
 
