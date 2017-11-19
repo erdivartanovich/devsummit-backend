@@ -183,25 +183,30 @@ class BoothService(BaseService):
 		response = ResponseBuilder()
 
 		channel_id = None
-		queries = db.session.query(Booth, User).join(User).all()
-		for booth, user in queries:
-			name = booth.name if booth.name is not None else 'Booth Chatroom'
-			logo = booth.logo_url
-
-			endpoint = QISCUS['BASE_URL'] + 'create_room'
-			payloads = {
-				'name': name,
-				'participants': [user.email],
-				'creator': user.email,
-				'avatar_url': logo
-			}
-			result = requests.post(
-					endpoint,
-					headers=self.headers,
-					json=payloads
-			)
-			payload = result.json()
+		booth, user = db.session.query(Booth, User).join(User).filter(Booth.id == id).first()
+		
+		name = booth.name if booth.name is not None else 'Booth Chatroom'
+		logo = booth.logo_url
+		email = self.qiscus_register(user, booth)
+		
+		endpoint = QISCUS['BASE_URL'] + 'create_room'
+		payloads = {
+			'name': name,
+			'participants': [email],
+			'creator': email,
+			'avatar_url': logo
+		}
+		result = requests.post(
+				endpoint,
+				headers=self.headers,
+				json=payloads
+		)
+		payload = result.json()
+		
+		if 'error' not in payload:
 			channel_id = payload['results']['room_id_str']
+		else:
+			return response.set_error(True).set_data(payload['error']).set_message('qiscus service error').build()
 
 		try:
 			self.model_booth = db.session.query(Booth).filter_by(id=id)
@@ -214,4 +219,23 @@ class BoothService(BaseService):
 			return response.set_data(data).build()
 		except SQLAlchemyError as e:
 			data = e.orig.args
-			return response.set_error(True).set_data(data).set_message('sql error').build()			
+			return response.set_error(True).set_data(data).set_message('sql error').build()
+
+	def qiscus_register(self, user, booth):
+		endpoint = QISCUS['BASE_URL'] + 'login_or_register'
+
+		payloads = {
+			'email': user.email,
+			'password': user.email,
+			'username': user.username,
+			'avatar_url': booth.logo_url
+		}
+
+		result = requests.post(
+				endpoint,
+				headers=self.headers,
+				json=payloads
+		)
+
+		payload = result.json()
+		return payload['results']['user']['email']
