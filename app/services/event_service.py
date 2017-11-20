@@ -39,7 +39,7 @@ class EventService(BaseService):
             for panel in panel_event:
                 users.append(panel.user.include_photos().as_dict())
                 data['user'] = users
-        else:
+        elif data['type'] != 'other':
             data['user'] = self.events_model.first().user.as_dict()
         return response.set_data(data).build()
 
