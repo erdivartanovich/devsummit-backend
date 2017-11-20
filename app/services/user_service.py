@@ -767,3 +767,13 @@ class UserService(BaseService):
 				data['tickets'].append(ticket.as_dict())
 			_results.append(data)
 		return response.set_data(_results).build()
+
+	def search_accounts(self, keyword):
+		response = ResponseBuilder()
+		_results = []
+		results = db.session.query(User).filter(or_(
+			User.email.contains(keyword), User.username.contains(keyword))).limit(20).all()
+		for result in results:
+			data = result.include_photos().as_dict()
+			_results.append(data)
+		return response.set_data(_results).set_message('search account results').build()

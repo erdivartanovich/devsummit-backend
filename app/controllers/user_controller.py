@@ -191,3 +191,14 @@ class UserController(BaseController):
                 return BaseController.send_error_api(None, 'new password and confirm password didnt match')
         else:
             return BaseController.send_error_api(None, 'Payloads not complete')
+
+    @staticmethod
+    def search_accounts(request):
+        keyword = request.args.get('search')
+        print(keyword)
+        if keyword is None:
+            return BaseController.send_error_api(None, 'invalid payloads')
+        result = userservice.search_accounts(keyword)
+        if result['error']:
+            return BaseController.send_error_api(result['data'], result['message'])
+        return BaseController.send_response_api(result['data'], result['message'])
