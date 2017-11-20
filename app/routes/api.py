@@ -1,15 +1,10 @@
-'''
-put api route in here
-'''
+"""Put api route in here"""
 from flask import Blueprint, request, jsonify, json, Response
 # import middlewares
 from app.middlewares.authentication import token_required
-from app.models import mail, db, socketio, mail
+from app.models import db, socketio
 from sqlalchemy import or_
-from app.services.email_service import EmailService
-from app.services import userservice
 from app.models.user import User
-from app.builders.response_builder import ResponseBuilder
 from flask_socketio import emit
 
 # controllers import
@@ -560,11 +555,23 @@ def user_tickets(*args, **kwargs):
 def check_in(*args, **kwargs):
     return UserTicketController.check_in(request)
 
+
 # Get check-in list
 @api.route('/admin/checkin-list', methods=['GET'])
 @token_required
 def get_check_in(*args, **kwargs):
     return CheckinController.index(request)
+
+
+# Get check-in list
+@api.route('/admin/checkin', methods=['POST'])
+@token_required
+def manual_checkin(*args, **kwargs):
+    user = kwargs['user']
+    if user.role_id is not ROLE['admin']:
+        return Response(json.dumps({'message': 'unauthorized'}), status=401, mimetype='application/json')
+    return UserTicketController.check_in(request)
+
 
 @api.route('/boothcheckin', methods=['POST'])
 @token_required

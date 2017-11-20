@@ -1,0 +1,56 @@
+<div class="modal fade" id="modal-add">
+    <div class="modal-dialog">
+        <div class="modal-content">
+        <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title">Default title</h4>
+        </div>
+        <div class="modal-body">
+                <div class="box box-primary">
+                    <div class="box-body box-profile">
+                            <ul class="list-group list-group-unbordered">
+                                <li class="list-group-item">
+                                    <div class="form-group">
+                                        <label for="i-ticket-code">Ticket code:</label>
+                                        <input type="text" class="form-control i-ticket-code" id="i-ticket-code">
+                                    </div>
+                                </li>
+                            </ul>
+                        <a href="#" class="btn btn-primary btn-block btn-save" id="-"><b>Save</b></a>
+        
+                    </div>
+                    <!-- /.box-body -->
+                </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+        </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!-- /.modal -->
+<!-- page script -->
+<script>
+    $('.btn-save').click(function(event){
+        const ticket_code = $('.i-ticket-code').val();
+        payload = {
+            ticket_code
+        }
+        console.log('payload');
+        dsa.post('admin/checkin', payload, function(result) {
+            console.log(result)
+            if(result.meta.success) {
+                window.location = "/checkin-list";
+            } else {
+                alert(result.meta.message)
+            }
+        });
+    });
+
+    $("#i-fileInput").change(function(){
+        readCreateURL(this);
+    }); 
+</script>

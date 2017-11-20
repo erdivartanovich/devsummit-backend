@@ -13,6 +13,7 @@ class UserTicketService():
         exist = db.session.query(UserTicket).filter_by(ticket_code=ticket_code).first()
         if exist is None:
             return {
+                'error': True,
                 'data': {'exist': False},
                 'message': 'user ticket does not exist'
             }
@@ -80,9 +81,12 @@ class UserTicketService():
         response = ResponseBuilder()
         results = []
         subquery = db.session.query(CheckIn.user_ticket_id).all()
-        user_tickets = db.session.query(UserTicket).filter(UserTicket.user_id == user_id, UserTicket.id.notin_(subquery)).all()
+        ut_ids = [i[0] for i in subquery]
+        user_tickets = db.session.query(UserTicket).filter(UserTicket.user_id == user_id).all()
         for ticket in user_tickets:
-            results.append(ticket.as_dict())
+            data = ticket.as_dict()
+            data['checked_in'] = ticket.id in ut_ids
+            results.append(data)
         if user_tickets is not None:
             return response.set_data(results).set_message('ticket retrieved').build()
         else:
