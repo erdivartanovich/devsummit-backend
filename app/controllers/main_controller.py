@@ -92,7 +92,11 @@ class MainController(BaseController):
 
 
     def getAccounts():
-        accounts = userservice.list_user(request, page=1)
+        keyword = request.args.get('search')
+        if keyword is None:
+            accounts = userservice.list_user(request, page=1)
+        else:
+            accounts = userservice.search_accounts(keyword)
         return render_template('admin/accounts/accounts.html', accounts=accounts['data'])
 
     def getHackers():
