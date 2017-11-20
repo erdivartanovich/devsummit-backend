@@ -95,8 +95,12 @@ class OrderService():
 		# check if it's hackaton
 		if order_details[0]['ticket_id'] == 10:
 			# check if proposal already submited
-			if self.hackatonproposalservice.check_hackaton_proposal_exist(user['id']):
-				return response.set_error(True).set_message('Hackaton cannot be submitted twice, our admin is in the process of verifying it, you will receive notification once it is done').set_data(None).build()
+			# disable hackaton now
+			return response.set_data(None).set_message(
+				'Hackaton registration is over.').set_error(
+				True).build()
+			# if self.hackatonproposalservice.check_hackaton_proposal_exist(user['id']):
+			# 	return response.set_error(True).set_message('Hackaton cannot be submitted twice, our admin is in the process of verifying it, you will receive notification once it is done').set_data(None).build()
 			
 		self.model_order = Order()
 		self.model_order.user_id = payloads['user_id']
