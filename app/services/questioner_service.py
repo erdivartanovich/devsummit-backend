@@ -69,17 +69,17 @@ class QuestionerService():
 
     def post_answer(self, id, user_id, payload):
         try:
-            answer = db.session.query(QuestionerAnswer).filter_by(id=id, user_id=user_id)
+            answer = db.session.query(QuestionerAnswer).filter_by(questioner_id=id, user_id=user_id)
             if not answer.first():
                 answer = QuestionerAnswer()
                 answer.user_id = user_id
                 answer.questioner_id = id
-                answer.answers = payload['answers']
+                answer.answers = json.dumps(payload['answers'])
                 db.session.add(answer)
                 data = answer.as_dict()
             else:
                 answer.update({
-                    'answers': payload['answers']    
+                    'answers':  json.dumps(payload['answers'])
                 })
                 data = answer.first().as_dict()
             db.session.commit()
