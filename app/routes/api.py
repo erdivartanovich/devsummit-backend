@@ -1253,7 +1253,6 @@ def get_referal_info(id, *args, **kwargs):
 @api.route('/eventbrite/hook', methods=['POST'])
 def event_brite_hook():
     return EventBriteController.hook(request)
-    sss
 
 
 @api.route('/questioners', methods=['GET', 'POST'])
