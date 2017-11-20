@@ -210,15 +210,26 @@ class UserService(BaseService):
 			return result
 
 
-	def list_user(self, request, admin=False):
+	def list_user(self, request, page, admin=False):
+		self.total_items = User.query.count()
+		if page is not None:
+			self.page = request.args.get('page')
+			# self.page = page
+		else:
+			self.perpage = 10
+			self.page = 1
+		self.base_url = request.base_url
+
+		# paginate
+		paginate = super().paginate(db.session.query(User).order_by(User.created_at.desc()))
 		response = ResponseBuilder()
 		_results = []
-		users = db.session.query(User).all()
-		for user in users:
+		# users = db.session.query(User).all()
+		for user in paginate['data']:
 			data = user.include_photos().as_dict()
-			data['role'] = user.role.as_dict()
+			data['role'] = user.role.name
 			_results.append(data)
-		return response.set_data(_results).build()
+		return response.set_data(_results).set_links(paginate['links']).build()
 
 	def list_hackaton_attendee(self):
 		response = ResponseBuilder()
