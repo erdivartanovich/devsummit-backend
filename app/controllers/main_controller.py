@@ -93,7 +93,7 @@ class MainController(BaseController):
 
     def getAccounts():
         accounts = userservice.list_user(request, page=1)
-        return render_template('admin/accounts/accounts.html', accounts=accounts['data'])
+        return render_template('admin/accounts/accounts.html', accounts=accounts)
 
     def getHackers():
         hackers = userservice.list_hackaton_attendee()

@@ -17,7 +17,6 @@
         <a href="#" class="btn btn-primary btn-add" style="margin-bottom: 12px;" data-toggle="modal" data-target="#modal-input" id="-"><b>Add New</b></a>
         <table id="account-list1" class="table table-bordered table-striped">
             <thead>
-
                 <tr>
                     <th>Attendee Name</th>
                     <th>Email</th>
@@ -28,7 +27,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for account in accounts %}
+                {% for account in accounts.data %}
                 <tr>
                     <td>
                         {{ account.last_name|e + ', ' + account.first_name|e }}
@@ -62,6 +61,15 @@
             </tbody>
         </table>
     </div>
+    <div class="pull-right" style="margin-top: 15px;">
+        <a href="{{ accounts.links.prev }}" id='btn-prev' class="btn btn-sm btn-success">
+            Previous
+        </a>
+        <a href="{{ accounts.links.next }}" id='btn-next' class="btn btn-sm btn-success">
+            Next
+        </a>
+    </div>
+    
     {% include "admin/base/modal_delete.html" %} 
     {% include "admin/accounts/account_input.html" %} 
     {% include "admin/accounts/account_photo.html" %} 
