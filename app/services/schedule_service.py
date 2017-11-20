@@ -96,7 +96,7 @@ class ScheduleService():
 				user['speaker'] = speaker.as_dict()
 				_result_user.append(user)
 			data['user'] = _result_user
-		else:
+		elif event.type != 'other':
 			data['user'] = event.user.include_photos().as_dict()
 
 		#  add includes

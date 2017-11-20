@@ -610,6 +610,13 @@ def users(*args, **kwargs):
     if(request.method == 'GET'):
         return UserController.index(request)
 
+# Search account list
+@api.route('/accounts', methods=['GET'])
+@token_required
+def search_accounts(*args, **kwargs):
+    if(request.method == 'GET'):
+        return UserController.search_accounts(request)
+
 
 @api.route('/usersphoto/<id>', methods=['PUT', 'PATCH'])
 @token_required

@@ -149,47 +149,46 @@
             const btd_id = $(this).attr('id');
             const id = btd_id.substring(4, btd_id.length);
             dsa.get('schedules/' + id, function (result) {
-                // bind result value in to attendee_detail.html 
                 const data = result['data'];
                 selected_stage_id = data['stage_id'];
                 selected_event_id = data['event_id'];
+                dsa.get('stages', function (result) {
+                    const stages = result['data'];
+                    var select = $(".edit-schedule-stages")
+                    stages.map(function (response) {
+                        // add to select
+                        var option = document.createElement('option');
+                        option.innerHTML = response.name
+                        option.value = response.id;
+                        // if id === current stage id, set as selected
+                        if (response.id == selected_stage_id) {
+                            option.selected = true
+                        }
+                        select.append(option)
+                    });
+                });
+                dsa.get('events', function (result) {
+                    const stages = result['data'];
+                    var select = $(".edit-schedule-events")
+                    stages.map(function (response) {
+                        // add to select
+                        var option = document.createElement('option');
+                        option.innerHTML = response.title
+                        option.value = response.id;
+                        // if id === current stage id, set as selected
+                        if (response.id == selected_event_id) {
+                            option.selected = true
+                        }
+                        select.append(option)
+                    });
+                });
                 $('.edit-date').val(moment(new Date(data['time_start'])).format("YYYY-MM-DD"));
                 $('.edit-time-start').val(moment(data['time_start']).format("HH:mm:ss"));
                 $('.edit-time-end').val(moment(data['time_end']).format("HH:mm:ss"));
                 $('.btn-save-edit').attr("id", data['id']);
             });
 
-            dsa.get('stages', function (result) {
-                const stages = result['data'];
-                var select = $(".edit-schedule-stages")
-                stages.map(function (response) {
-                    // add to select
-                    var option = document.createElement('option');
-                    option.innerHTML = response.name
-                    option.value = response.id;
-                    // if id === current stage id, set as selected
-                    if (response.id == selected_stage_id) {
-                        option.selected = true
-                    }
-                    select.append(option)
-                });
-            });
 
-            dsa.get('events', function (result) {
-                const stages = result['data'];
-                var select = $(".edit-schedule-events")
-                stages.map(function (response) {
-                    // add to select
-                    var option = document.createElement('option');
-                    option.innerHTML = response.title
-                    option.value = response.id;
-                    // if id === current stage id, set as selected
-                    if (response.id == selected_event_id) {
-                        option.selected = true
-                    }
-                    select.append(option)
-                });
-            });
 
         })
 

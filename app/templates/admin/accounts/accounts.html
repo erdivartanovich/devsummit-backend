@@ -15,10 +15,10 @@
     <!-- /.box-header -->
     <div class="box-body">
         <a href="#" class="btn btn-primary btn-add" style="margin-bottom: 12px;" data-toggle="modal" data-target="#modal-input" id="-"><b>Add New</b></a>
-
+        <input placeholder="search by email or username" class="form-control search-box" type="text" name="search">
+        <a href="#" class="btn btn-primary btn-search" style="margin-bottom: 12px;"><b>Search</b></a>
         <table id="account-list1" class="table table-bordered table-striped">
             <thead>
-
                 <tr>
                     <th>Attendee Name</th>
                     <th>Email</th>
@@ -29,7 +29,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for account in accounts %}
+                {% for account in accounts.data %}
                 <tr>
                     <td>
                         {{ account.last_name|e + ', ' + account.first_name|e }}
@@ -41,7 +41,7 @@
                         {{ account.username|e }}
                     </td>
                     <td>
-                        {{ account.role['name']|e }}
+                        {{ account.role|e }}
                     </td>
                     <td>
                         <img src="{{account.photos[0].url|e}}" height="120px" width="100px" alt='user photo'>
@@ -63,6 +63,17 @@
             </tbody>
         </table>
     </div>
+    <div class="pull-right" style="margin-top: 15px;">
+        {% if accounts.links %}
+            <a href="{{ accounts.links.prev }}" id='btn-prev' class="btn btn-sm btn-success">
+                Previous
+            </a>
+            <a href="{{ accounts.links.next }}" id='btn-next' class="btn btn-sm btn-success">
+                Next
+            </a>
+        {% endif %}
+    </div>
+    
     {% include "admin/base/modal_delete.html" %} 
     {% include "admin/accounts/account_input.html" %} 
     {% include "admin/accounts/account_photo.html" %} 
@@ -119,6 +130,11 @@
             })
                     
         });
+
+        $('.btn-search').click(function(event) {
+            const keyword = $('.search-box').val()
+            window.location = 'accounts?search=' + keyword
+        })
 
         $('.btn-edit').click(function (event) {
             $('.modal-title').html('EDIT');
@@ -219,10 +235,6 @@
                 $('.btn-input-save').attr("id", `${data['id']}`);
             })
         })
-
-        $(function () {
-            $('#account-list1').DataTable();
-        });
     </script>
 
     {% endblock %}
