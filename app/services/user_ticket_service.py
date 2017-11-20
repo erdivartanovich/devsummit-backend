@@ -13,6 +13,7 @@ class UserTicketService():
         exist = db.session.query(UserTicket).filter_by(ticket_code=ticket_code).first()
         if exist is None:
             return {
+                'error': True,
                 'data': {'exist': False},
                 'message': 'user ticket does not exist'
             }
