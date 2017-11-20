@@ -21,8 +21,9 @@
 
 {% block content %}
     <div class="box">
+        <a href="#" class="btn btn-primary btn-add" data-toggle="modal" data-target="#modal-add" id="-"><b>Manual Checkin</b></a>
         <div class="box-body">
-            <table id="booth-list1" class="table table-bordered table-striped">
+            <table id="checkin-list1" class="table table-bordered table-striped">
                 <thead>
                     <tr>
                         <th>Name</th>
@@ -52,6 +53,8 @@
             </table>
         </div>
     </div>
+    {% include "admin/checkins/checkin_add.html" %}
+
 {% endblock %}
 
 {% block footer_link %}
@@ -60,4 +63,13 @@
     <script src="{{ url_for('static', filename='assets/datatables.net-bs/js/dataTables.bootstrap.min.js') }}"></script>
 
     <!-- page script -->
+    <script type="text/javascript">
+        $('.btn-add').click(function(event){
+            $('.modal-title').html('Manually check in ticket');
+        });
+
+        $(function () {
+            $('#checkin-list1').DataTable();
+        })
+    </script>
 {% endblock %}
