@@ -64,12 +64,14 @@
         </table>
     </div>
     <div class="pull-right" style="margin-top: 15px;">
-        <a href="{{ accounts.links.prev }}" id='btn-prev' class="btn btn-sm btn-success">
-            Previous
-        </a>
-        <a href="{{ accounts.links.next }}" id='btn-next' class="btn btn-sm btn-success">
-            Next
-        </a>
+        {% if accounts.links %}
+            <a href="{{ accounts.links.prev }}" id='btn-prev' class="btn btn-sm btn-success">
+                Previous
+            </a>
+            <a href="{{ accounts.links.next }}" id='btn-next' class="btn btn-sm btn-success">
+                Next
+            </a>
+        {% endif %}
     </div>
     
     {% include "admin/base/modal_delete.html" %} 
