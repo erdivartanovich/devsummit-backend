@@ -26,7 +26,7 @@
                     <th>ID</th>
                     <th>User</th>
                     <th>Feed Message</th>
-                    <th>Reports Data</th>
+                    <th>Reports Count</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -43,9 +43,7 @@
                         {{ report.message|e }}
                     </td>
                     <td>
-                        {% for key, type in report.report_type.items() %}
-                            {{key}} : {{type}}<br />
-                        {% endfor %}
+                        {{ report.report_count }}
                     </td>                    
                     <td>
                         <button id='bte-{{ report.feed_id }}' type="button" class="btn btn-sm btn-info btn-delete" data-toggle="modal" data-target="#modal-delete">
