@@ -13,7 +13,6 @@ class UserTicketService():
     def check_in(self, ticket_code):
         exist = db.session.query(UserTicket).filter(or_(
             UserTicket.ticket_code == ticket_code, UserTicket.id == ticket_code)).first()
-        exist = db.session.query(UserTicket).filter_by(ticket_code=ticket_code).first()
         if exist is None:
             return {
                 'error': True,
