@@ -1,5 +1,6 @@
 import datetime
 from app.models import db
+from sqlalchemy import or_
 from app.models.check_in import CheckIn
 from app.models.user_ticket import UserTicket
 from app.models.user import User
@@ -41,6 +42,24 @@ class CheckinService(BaseService):
             _results.append(data)
 
         return response.set_data(_results).set_links(checkins['links']).build()
+
+    def search_checkins(self, keyword):
+        response = ResponseBuilder()
+        _results = []
+        results = db.session.query(CheckIn, UserTicket).join(UserTicket, User).filter(or_(
+            UserTicket.ticket_code.contains(keyword),
+            UserTicket.id.contains(keyword),
+            User.username.contains(keyword),
+            User.first_name.contains(keyword),
+            User.last_name.contains(keyword),
+            User.email.contains(keyword))).limit(20).all()
+        for checkin, userticket in results:
+            data = checkin.as_dict()
+            data = self.transformTimeZone(data)
+            data['user_tickets'] = userticket.as_dict()
+            data['user_tickets']['user'] = userticket.user.include_photos().as_dict()
+            _results.append(data)
+        return response.set_data(_results).set_message('search account results').build()
 
     def transformTimeZone(self, obj):
         entry = obj

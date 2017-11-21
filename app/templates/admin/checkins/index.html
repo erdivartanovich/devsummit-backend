@@ -22,7 +22,11 @@
 {% block content %}
     <div class="box">
         <a href="#" class="btn btn-primary btn-add" data-toggle="modal" data-target="#modal-add" id="-"><b>Manual Checkin</b></a>
+        <input placeholder="search by email or username, ticket_code or ticket_id" class="form-control search-box" type="text" name="search">
+        <a href="#" class="btn btn-primary btn-search" style="margin-bottom: 12px;"><b>Search</b></a>
+        {% if checkins.links %}
         <span>Total Checkins: {{ checkins.links.total_items }}</span>
+        {% endif %}
         <div class="box-body">
             <table id="checkin-list1" class="table table-bordered table-striped">
                 <thead>
@@ -78,6 +82,11 @@
         $('.btn-add').click(function(event){
             $('.modal-title').html('Manually check in ticket');
         });
+
+        $('.btn-search').click(function(event) {
+            const keyword = $('.search-box').val()
+            window.location = 'checkin-list?search=' + keyword
+        })
         /*
         $(function () {
             $('#checkin-list1').DataTable();
