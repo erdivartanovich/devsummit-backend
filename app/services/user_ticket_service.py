@@ -4,12 +4,15 @@ from app.models.user_ticket import UserTicket
 from app.models.check_in import CheckIn
 from app.models.base_model import BaseModel
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import or_
 from app.builders.response_builder import ResponseBuilder
 
 
 class UserTicketService():
 
     def check_in(self, ticket_code):
+        exist = db.session.query(UserTicket).filter(or_(
+            UserTicket.ticket_code == ticket_code, UserTicket.id == ticket_code)).first()
         exist = db.session.query(UserTicket).filter_by(ticket_code=ticket_code).first()
         if exist is None:
             return {
