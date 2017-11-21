@@ -28,10 +28,7 @@ class TicketTransferController(BaseController):
 			user_ticket_id = request.json['user_ticket_id'] if 'user_ticket_id' in request.json else None
 			if None in [user, receiver, user_ticket_id]:
 				return BaseController.send_error_api(None, 'payload is not valid')
-			if user['role_id'] == ROLE['user']:
-				result = tickettransferservice.transfer(user['id'], user_ticket_id, receiver)
-			else:
-				return BaseController.send_error_api(None, 'this operation is not valid for this type of user')
+			result = tickettransferservice.transfer(user['id'], user_ticket_id, receiver)
 
 			if result['error']:
 				return BaseController.send_error_api(result['data'], result['message'])
