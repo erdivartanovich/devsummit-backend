@@ -4,15 +4,13 @@ from app.models.user_ticket import UserTicket
 from app.models.check_in import CheckIn
 from app.models.base_model import BaseModel
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import or_
 from app.builders.response_builder import ResponseBuilder
 
 
 class UserTicketService():
 
     def check_in(self, ticket_code):
-        exist = db.session.query(UserTicket).filter(or_(
-            UserTicket.ticket_code == ticket_code, UserTicket.id == ticket_code)).first()
+        exist = db.session.query(UserTicket).filter_by(ticket_code=ticket_code).first()
         if exist is None:
             return {
                 'error': True,
@@ -63,12 +61,15 @@ class UserTicketService():
         check_in = CheckIn()
         check_in.user_ticket_id = user_ticket_id
         db.session.add(check_in)
+
         try:
             db.session.commit()
+            user = check_in.user_ticket.user 
+            name = user.first_name + ' ' + user.last_name
             # return checkin success
             return {
                 'error': False,
-                'data': {'checked_in': True},
+                'data': {'checked_in': True, 'name': name},
                 'message': 'user checked in successfully'
             }
         except SQLAlchemyError as e:
