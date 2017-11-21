@@ -58,17 +58,18 @@ class FeedReportService(BaseService):
 	def admin_get(self, request):
 		# TODO: optimize this method
 		report_feeds = db.session.query(
-			FeedReport,
-			func.count(FeedReport.report_type)).group_by(
+			FeedReport.feed_id).group_by(
 			FeedReport.feed_id).all()
+
 		results = []
-		for feed, count in report_feeds:
-			if feed.feed.deleted_at is not None:
+		for feed_id in report_feeds:
+			feed, count = db.session.query(Feed, func.count(FeedReport.report_type)).join(FeedReport).filter(Feed.id == feed_id[0]).first()
+			if feed.deleted_at is not None:
 				continue
 			data = {
-				'feed_id': feed.feed_id,
-				'message': feed.feed.message,
-				'username': feed.feed.user.username,
+				'feed_id': feed_id[0],
+				'message': feed.message,
+				'username': feed.user.username,
 				'report_count': count
 			}
 			results.append(data)
