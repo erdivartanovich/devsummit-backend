@@ -109,8 +109,12 @@ class MainController(BaseController):
         return render_template('admin/booths/booths.html', booths=booths['data'])
     
     def getCheckinList():
-        checkins = checkinservice.checkin_list(request)
-        return render_template('admin/checkins/index.html', checkins=checkins['data'])
+        keyword = request.args.get('search')
+        if keyword is None:
+            checkins = checkinservice.checkin_list(request, page=1)
+        else:
+            checkins = checkinservice.search_checkins(keyword)
+        return render_template('admin/checkins/index.html', checkins=checkins)
 
     def getSpeakers():
         speakers = speakerservice.get()
