@@ -7,16 +7,31 @@ from app.models.base_model import BaseModel
 from sqlalchemy.exc import SQLAlchemyError
 from app.configs.settings import LOCAL_TIME_ZONE
 from app.builders.response_builder import ResponseBuilder
+from app.services.base_service import BaseService
 
 
-class CheckinService():
-     
-    def checkin_list(self, request):
+
+class CheckinService(BaseService):
+    def __init__(self, perpage):
+        self.perpage = perpage
+
+    def checkin_list(self, request, page):
+        self.total_items = CheckIn.query.count()
+        if page is not None:
+            self.page = request.args.get('page')
+			# self.page = page
+        else:
+            self.perpage = 10
+            self.page = 1
+        self.base_url = request.base_url
+
+		# paginate
+        checkins = super().paginate(db.session.query(CheckIn).order_by(CheckIn.created_at.desc()))
         response = ResponseBuilder()
-        checkins = db.session.query(CheckIn).all()
+        # checkins = db.session.query(CheckIn).all()
         _results = []
         # if checkins is not None:
-        for checkin in checkins:
+        for checkin in checkins['data']:
             data = checkin.as_dict()
             data = self.transformTimeZone(data)
             user_ticket = db.session.query(UserTicket).filter_by(id = checkin.user_ticket_id).first()
@@ -25,7 +40,7 @@ class CheckinService():
 
             _results.append(data)
 
-        return response.set_data(_results).build()
+        return response.set_data(_results).set_links(checkins['links']).build()
 
     def transformTimeZone(self, obj):
         entry = obj

@@ -22,6 +22,7 @@
 {% block content %}
     <div class="box">
         <a href="#" class="btn btn-primary btn-add" data-toggle="modal" data-target="#modal-add" id="-"><b>Manual Checkin</b></a>
+        <span>Total Checkins: {{ checkins.links.total_items }}</span>
         <div class="box-body">
             <table id="checkin-list1" class="table table-bordered table-striped">
                 <thead>
@@ -33,7 +34,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for checkin in checkins %}
+                    {% for checkin in checkins['data'] %}
                     <tr>
                         <td>
                             {{checkin.user_tickets.user.first_name}} {{checkin.user_tickets.user.last_name}}
@@ -52,6 +53,16 @@
                 </tbody>
             </table>
         </div>
+        <div class="pull-right" style="margin-top: 15px;">
+            {% if checkins.links %}
+                <a href="{{ checkins.links.prev }}" id='btn-prev' class="btn btn-sm btn-success">
+                    Previous
+                </a>
+                <a href="{{ checkins.links.next }}" id='btn-next' class="btn btn-sm btn-success">
+                    Next
+                </a>
+            {% endif %}
+        </div>
     </div>
     {% include "admin/checkins/checkin_add.html" %}
 
@@ -67,9 +78,9 @@
         $('.btn-add').click(function(event){
             $('.modal-title').html('Manually check in ticket');
         });
-
+        /*
         $(function () {
             $('#checkin-list1').DataTable();
-        })
+        }) */
     </script>
 {% endblock %}
