@@ -63,12 +63,15 @@ class UserTicketService():
         check_in = CheckIn()
         check_in.user_ticket_id = user_ticket_id
         db.session.add(check_in)
+
         try:
             db.session.commit()
+            user = check_in.user_ticket.user 
+            name = user.first_name + ' ' + user.last_name
             # return checkin success
             return {
                 'error': False,
-                'data': {'checked_in': True},
+                'data': {'checked_in': True, 'name': name},
                 'message': 'user checked in successfully'
             }
         except SQLAlchemyError as e:
