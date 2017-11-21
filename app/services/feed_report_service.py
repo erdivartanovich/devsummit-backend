@@ -57,25 +57,19 @@ class FeedReportService(BaseService):
 
 	def admin_get(self, request):
 		# TODO: optimize this method
-		report_feeds = db.session.query(FeedReport).group_by(FeedReport.feed_id).all()
+		report_feeds = db.session.query(
+			FeedReport,
+			func.count(FeedReport.report_type)).group_by(
+			FeedReport.feed_id).all()
 		results = []
-		for feed in report_feeds:
+		for feed, count in report_feeds:
 			if feed.feed.deleted_at is not None:
 				continue
-			spam = db.session.query(FeedReport).filter(FeedReport.feed_id == feed.feed_id).filter(FeedReport.report_type == 'spam').count()
-			racism = db.session.query(FeedReport).filter(FeedReport.feed_id == feed.feed_id).filter(FeedReport.report_type == 'racism').count()
-			pornography = db.session.query(FeedReport).filter(FeedReport.feed_id == feed.feed_id).filter(FeedReport.report_type == 'pornography').count()
-			violence = db.session.query(FeedReport).filter(FeedReport.feed_id == feed.feed_id).filter(FeedReport.report_type == 'violence').count()			
 			data = {
 				'feed_id': feed.feed_id,
 				'message': feed.feed.message,
 				'username': feed.feed.user.username,
-				'report_type': {
-					'Racism': racism,
-					'Spam': spam,
-					'Pornography': pornography,
-					'Violence': violence
-				}
+				'report_count': count
 			}
 			results.append(data)
 		response = ResponseBuilder()
