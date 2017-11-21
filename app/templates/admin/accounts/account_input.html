@@ -139,7 +139,7 @@
         };
         dsa.patch('{{ globals["api_route"] }}/' + id, payload, function(result) {            
             if(result.meta.success) {
-                window.location = '/{{ globals["base_route"] }}';
+                window.location = '/{{ globals["base_route"] }}?page=1';
             }
         });
     }
@@ -161,7 +161,7 @@
 
         dsa.post('{{ globals["api_route"] }}', payload, function(result) {            
             if(result.meta.success) {
-                window.location = '/{{ globals["base_route"] }}';
+                window.location = '/{{ globals["base_route"] }}?page=1';
             }
         });
     }
