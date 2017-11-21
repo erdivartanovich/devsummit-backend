@@ -93,7 +93,6 @@ class MainController(BaseController):
 
     def getAccounts():
         keyword = request.args.get('search')
-        print(keyword)
         if keyword is None:
             accounts = userservice.list_user(request, page=1)
         else:
