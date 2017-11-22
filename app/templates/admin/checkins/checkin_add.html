@@ -39,12 +39,10 @@
         payload = {
             ticket_code
         }
-        console.log('payload');
         dsa.post('admin/checkin', payload, function(result) {
-            console.log(result)
             if(result.meta.success) {
                 alert('Selamat Datang Bapak/Ibu '+ result.data.name);
-                window.location = "/checkin-list?page=1";
+                $('.i-ticket-code').val('');
             } else {
                 alert(result.meta.message)
             }
