@@ -31,6 +31,9 @@ from app.services import checkinservice
 from app.configs.constants import ROLE
 from app.controllers.partner_pj_controller import PartnerPjController
 from app.services import beaconservice
+from app.models.email_templates.email_hackaton import EmailHackaton
+from flask_weasyprint import HTML, render_pdf
+
 
 class MainController(BaseController):
 
@@ -102,6 +105,18 @@ class MainController(BaseController):
     def getHackers():
         hackers = userservice.list_hackaton_attendee()
         return render_template('admin/accounts/hackaton_users.html', hackers=hackers['data'])
+
+    def getCheckedInHackers():
+        hackers = userservice.list_hackaton_checkedin()
+        return render_template('admin/accounts/hackaton_checkedin.html', hackers=hackers['data'])
+
+    def get_certificate(user_id):
+        user = userservice.check_hackers(user_id)
+        if user is None:
+            return 'You are have not participated in the hackaton'
+        mail_template = EmailHackaton("devsummit-hackathon-certificate.html")
+        mail_template = mail_template.build(user.first_name + ' ' + user.last_name)
+        return render_pdf(HTML(string=mail_template))
 
     def getBooths():
         booths = boothservice.get(request)
