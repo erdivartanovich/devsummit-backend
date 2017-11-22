@@ -46,3 +46,22 @@ class HackatonProposalController(BaseController):
 		if result['error']:
 			return BaseController.send_error_api(result['data'], result['message'])
 		return BaseController.send_response_api(result['data'], result['message'])
+
+	@staticmethod
+	def resend_certificate(user_id):
+		if user_id is None:
+			return BaseController.send_error_api(None, 'invalid payload')
+		payloads = {
+			'user_id': user_id
+		}
+		result = hackatonproposalservice.resend_certificate(payloads)
+		if result['error']:
+			return BaseController.send_error_api(result['data'], result['message'])
+		return BaseController.send_response_api(result['data'], result['message'])
+
+	@staticmethod
+	def send_certificate():
+		result = hackatonproposalservice.send_certificate()
+		if result['error']:
+			return BaseController.send_error_api(result['data'], result['message'])
+		return BaseController.send_response_api(result['data'], result['message'])
