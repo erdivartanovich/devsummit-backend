@@ -20,7 +20,7 @@ app.config['SAVE_SPEAKER_DOC_DEST'] = 'documents/speakers/'
 app.config['GET_SPEAKER_DOC_DEST'] = 'static/'
 app.config['STATIC_DEST'] = 'app/static/'
 # These are the extentions that we are accepting to be upload
-app.config['ALLOWED_SPEAKER_DOC_EXTENSIONS'] = set(['pdf', 'ppt'])
+app.config['ALLOWED_SPEAKER_DOC_EXTENSIONS'] = set(['pdf', 'ppt', 'pptx'])
 
 
 class SpeakerDocumentService():
