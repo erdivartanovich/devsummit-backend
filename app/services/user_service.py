@@ -13,6 +13,7 @@ from flask import request, current_app
 from app.models import mail
 from app.models.access_token import AccessToken
 from app.models.user import User
+from app.models.check_in import CheckIn
 from app.models.user_booth import UserBooth
 from app.models.user_photo import UserPhoto
 from app.models.user_ticket import UserTicket
@@ -238,6 +239,16 @@ class UserService(BaseService):
 		for hacker in hackers:
 			_results.append(hacker.include_photos().as_dict())
 		return response.set_data(_results).set_message('hackers retreived').set_links({}).build()
+
+	def list_hackaton_checkedin(self):
+		response = ResponseBuilder()
+		_results = []
+		checked_in = db.session.query(UserTicket.user_id).join(CheckIn).all()
+		hackers = db.session.query(User).filter(
+			User.role_id==ROLE['hackaton'], User.id.in_(checked_in)).all()
+		for hacker in hackers:
+			_results.append(hacker.include_photos().as_dict())
+		return response.set_data(_results).set_message('hackers retrieved').set_links({}).build()
 
 	def get_user_filter(self, type=7):
 		results = []
@@ -777,3 +788,11 @@ class UserService(BaseService):
 			data = result.include_photos().as_dict()
 			_results.append(data)
 		return response.set_data(_results).set_message('search account results').build()
+
+	def check_hackers(self, user_id):
+		checked_in = db.session.query(UserTicket.user_id).join(CheckIn).all()
+		hacker = db.session.query(User).filter(
+			User.role_id==ROLE['hackaton'],
+			User.id.in_(checked_in),
+			User.id==user_id).first()
+		return hacker 
