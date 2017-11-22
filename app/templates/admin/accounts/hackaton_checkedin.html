@@ -1,0 +1,92 @@
+{% extends "admin/base/index.html" %} {% block title %}
+<title> Accounts list </title> {% endblock %} {% set globals={'base_route': 'accounts', 'api_route': 'users'} %} {% block header_link
+%}
+<!-- DataTables -->
+<link rel="stylesheet" href="{{ url_for('static', filename='assets/datatables.net-bs/css/dataTables.bootstrap.min.css') }}"> {% endblock %} {% block page_header %} {{ super() }}
+<h1>
+    Checked in Hackers
+    <small>List of checked in Hackatons</small>
+
+</h1>
+{% endblock %} {% block breadcrumb %}
+<li class="active">Checked in Hackaton Participants</li>
+{% endblock %} {% block content %}
+<div class="box">
+    <!-- /.box-header -->
+    <button type="button" class="btn btn-sm btn-info btn-blast">
+            Send Certificate To All Participated Hackers
+    </button>
+    <div class="box-body">
+        <table id="hacker-list1" class="table table-bordered table-striped">
+            <thead>
+
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Username</th>
+                    <th>Profile Photo</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for hacker in hackers %}
+                <tr>
+                    <td>
+                        {{ hacker['last_name']|e + ', ' + hacker['first_name']|e }}
+                    </td>
+                    <td>
+                        {{ hacker.email|e }}
+                    </td>
+                    <td>
+                        {{ hacker.username|e }}
+                    </td>
+                    <td>
+                        <img src="{{ hacker.photos[0].url|e }}" height="120px" width="100px" alt='user photo'>
+                    </td>
+                    <td>
+                        <button id='bte-{{ hacker.id }}' type="button" class="btn btn-sm btn-info btn-resend">
+                                Resend Email
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endblock %} 
+    {% block footer_link %}
+    <!-- DataTables -->
+    <script src="{{ url_for('static', filename='assets/datatables.net/js/jquery.dataTables.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/datatables.net-bs/js/dataTables.bootstrap.min.js') }}"></script>
+
+    <script type="text/javascript">
+        $('.btn-resend').click(function (event) {
+            const bte_id = $(this).attr('id');
+            const id = bte_id.substring(4, bte_id.length);
+            if (confirm('Resend Hackaton Certificate?')) {
+                dsa.post('hackaton-certificate/' + id + '/resend', null, function (result) {
+                    console.log(result)
+                    if (result.meta.success) {
+                       window.location = '/checkedin_hackers';
+                    }
+                });
+            }
+        });
+
+        $('.btn-blast').click(function (event) {
+            if (confirm('Blast Hackaton Certificate to all participated hackers?')) {
+                dsa.post('hackaton-certificate/sendall', null, function (result) {
+                    console.log(result)
+                    if (result.meta.success) {
+                       window.location = '/checkedin_hackers';
+                    }
+                });
+            }
+        });
+        $(function () {
+            $('#hacker-list1').DataTable();
+        });    
+    </script>
+
+    <!-- page script -->
+    {% endblock %}
