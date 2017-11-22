@@ -27,7 +27,7 @@ class CheckinService(BaseService):
         self.base_url = request.base_url
 
 		# paginate
-        checkins = super().paginate(db.session.query(CheckIn).order_by(CheckIn.created_at.desc()))
+        checkins = super().paginate(db.session.query(CheckIn).order_by(CheckIn.updated_at.desc()))
         response = ResponseBuilder()
         # checkins = db.session.query(CheckIn).all()
         _results = []
