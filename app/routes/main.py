@@ -3,8 +3,6 @@ from app.controllers.main_controller import MainController
 from app.services.helper import Helper
 from app.middlewares.rbac import get_previllege
 
-
-
 main = Blueprint('main', __name__)
 
 
@@ -118,6 +116,11 @@ def partners():
 @main.route('/hackers')
 def getHackers():
     return MainController.getHackers()
+
+
+@main.route('/checkedin_hackers')
+def getHackersCheckin():
+    return MainController.getCheckedInHackers()
 
 
 @main.route('/partnerspj', methods=['GET'])
@@ -273,4 +276,6 @@ def region_show(id):
 def region_add():
     return MainController.region_add()
 
-    
+@main.route('/certificate-<id>.pdf')
+def get_certificate(id):
+    return MainController.get_certificate(id)
