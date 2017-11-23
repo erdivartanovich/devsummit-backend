@@ -4,17 +4,17 @@
 <!-- DataTables -->
 <link rel="stylesheet" href="{{ url_for('static', filename='assets/datatables.net-bs/css/dataTables.bootstrap.min.css') }}"> {% endblock %} {% block page_header %} {{ super() }}
 <h1>
-    Checked in Hackers
-    <small>List of checked in Hackatons</small>
+    Checked in Users
+    <small>List of checked in Users</small>
 
 </h1>
 {% endblock %} {% block breadcrumb %}
-<li class="active">Checked in Hackaton Participants</li>
+<li class="active">Checked in Participants</li>
 {% endblock %} {% block content %}
 <div class="box">
     <!-- /.box-header -->
     <button type="button" class="btn btn-sm btn-info btn-blast">
-            Send Certificate To All Participated Hackers
+            Send Certificate To All Participated User
     </button>
     <div class="box-body">
         <table id="hacker-list1" class="table table-bordered table-striped">

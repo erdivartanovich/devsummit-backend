@@ -129,7 +129,7 @@ class HackatonProposalService(BaseService):
 		user = db.session.query(User).filter(User.id == payloads['user_id']).first()
 		if user is None:
 			return response.set_data(None).set_message('user not found').set_error(True).build()
-		extra = "\nLink to your downloadable certificate: <a href='https://api.devsummit.io/certificate-%s.pdf'>here</a>" %user.id
+		extra = "<br/>Link to your downloadable certificate: <a href='https://api.devsummit.io/certificate-%s.pdf'>here</a>" %user.id
 		template = mail_template.build(user.first_name + ' ' + user.last_name, extra)
 		email = emailservice.set_recipient(user.email).set_subject('Indonesia Developer Summit 2017 Hackathon').set_sender('noreply@devsummit.io').set_html(template).build()
 		mail.send(email)
@@ -141,12 +141,12 @@ class HackatonProposalService(BaseService):
 		mail_template = EmailHackaton("devsummit-hackathon-certificate.html")
 		checked_in = db.session.query(UserTicket.user_id).join(CheckIn).all()
 		hackers = db.session.query(User).filter(
-			or_(User.role_id==ROLE['hackaton'], User.role_id==ROLE['attendee']), User.id.in_(checked_in)).all()
+			or_(User.role_id==ROLE['hackaton'], User.role_id==ROLE['user']), User.id.in_(checked_in)).all()
 		if hackers is None:
 			return response.set_data(None).set_message('user not found').set_error(True).build()
 		for user in hackers:
 			emailservice = EmailService()
-			extra = "\nLink to your downloadable certificate: <a href='https://api.devsummit.io/certificate-%s.pdf'>here</a>" %user.id
+			extra = "<br/>Link to your downloadable certificate: <a href='https://api.devsummit.io/certificate-%s.pdf'>here</a>" %user.id
 			template = mail_template.build(user.first_name + ' ' + user.last_name, extra)
 			email = emailservice.set_recipient(user.email).set_subject('Indonesia Developer Summit 2017 Hackathon').set_sender('noreply@devsummit.io').set_html(template).build()
 			mail.send(email)
