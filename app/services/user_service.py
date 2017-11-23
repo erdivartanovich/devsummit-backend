@@ -792,7 +792,6 @@ class UserService(BaseService):
 	def check_hackers(self, user_id):
 		checked_in = db.session.query(UserTicket.user_id).join(CheckIn).all()
 		hacker = db.session.query(User).filter(
-			User.role_id==ROLE['hackaton'],
 			User.id.in_(checked_in),
 			User.id==user_id).first()
 		return hacker 
