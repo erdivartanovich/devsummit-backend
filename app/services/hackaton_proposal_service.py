@@ -16,7 +16,7 @@ from app.services.email_service import EmailService
 from app.builders.response_builder import ResponseBuilder
 from app.models.hackaton_proposals import HackatonProposal
 from app.models.order import Order
-
+from sqlalchemy import or_
 
 class HackatonProposalService(BaseService):
 
@@ -141,7 +141,7 @@ class HackatonProposalService(BaseService):
 		mail_template = EmailHackaton("devsummit-hackathon-certificate.html")
 		checked_in = db.session.query(UserTicket.user_id).join(CheckIn).all()
 		hackers = db.session.query(User).filter(
-			User.role_id==ROLE['hackaton'], User.id.in_(checked_in)).all()
+			or_(User.role_id==ROLE['hackaton'], User.role_id==ROLE['attendee']), User.id.in_(checked_in)).all()
 		if hackers is None:
 			return response.set_data(None).set_message('user not found').set_error(True).build()
 		for user in hackers:
