@@ -113,7 +113,7 @@ class MainController(BaseController):
     def get_certificate(user_id):
         user = userservice.check_hackers(user_id)
         if user is None:
-            return 'You are have not participated in the hackaton'
+            return 'Sorry but you have not participated devsummit'
         mail_template = EmailHackaton("devsummit-hackathon-certificate.html")
         mail_template = mail_template.build(user.first_name + ' ' + user.last_name)
         return render_pdf(HTML(string=mail_template))
