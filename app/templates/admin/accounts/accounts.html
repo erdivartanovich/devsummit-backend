@@ -60,6 +60,9 @@
                             data-toggle="modal" data-target="#modal-grant">
                                 Grant
                         </button>
+                        <button id='btd-{{ account.id }}' type="button" class="btn btn-sm btn-info btn-resend">
+                                resend certificate
+                        </button>
                     </td>
                 </tr>
                 {% endfor %}
@@ -89,6 +92,18 @@
 
     <!-- page script -->
     <script>
+        $('.btn-resend').click(function (event) {
+            const bte_id = $(this).attr('id');
+            const id = bte_id.substring(4, bte_id.length);
+            if (confirm('Resend Hackaton Certificate?')) {
+                dsa.post('hackaton-certificate/' + id + '/resend', null, function (result) {
+                    console.log(result)
+                    if (result.meta.success) {
+                       window.location = '/checkedin_hackers';
+                    }
+                });
+            }
+        });
         /* check if not user, button will disabled */
         $(document).ready(function () {
             $('.btn-grant').each(function (index, value) {

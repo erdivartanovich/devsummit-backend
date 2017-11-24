@@ -108,6 +108,11 @@ def adduserphoto():
     return render_template('admin/users/user_photos_add.html')
 
 
+@main.route('/manual-certificate')
+def manual_certificate():
+    return render_template('admin/accounts/manual_certificate.html')
+
+
 @main.route('/partners', methods=['GET', 'POST'])
 def partners():
     if(request.method == 'GET'):
