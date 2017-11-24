@@ -127,12 +127,17 @@ class HackatonProposalService(BaseService):
 		emailservice = EmailService()
 		mail_template = EmailHackaton("devsummit-hackathon-certificate.html")
 		checked_in = db.session.query(UserTicket.user_id).join(CheckIn).all()
+		checkins = [i[0] for i in checked_in]
+		print(checkins)
 		user = db.session.query(User).filter(
 			or_(User.id == payloads['user_id'], 
-				User.email == payloads['user_id']),
-			User.id.in_(checked_in)).first()
+				User.email == payloads['user_id'])).first()
 		if user is None:
-			return response.set_data(None).set_message('user not found or did not check in.').set_error(True).build()
+			return response.set_data(None).set_message('user not found.').set_error(True).build()
+		if user.id not in checkins:
+			return response.set_data(None).set_message(
+				'user found but did not check in.').set_error(
+				True).build()
 		extra = "<br/><br/><br/>Link to your downloadable certificate: <a href='https://api.devsummit.io/certificate-%s.pdf'>here</a>" %user.id
 		template = mail_template.build(user.first_name + ' ' + user.last_name, extra)
 		email = emailservice.set_recipient(user.email).set_subject('Indonesia Developer Summit 2017').set_sender('noreply@devsummit.io').set_html(template).build()
