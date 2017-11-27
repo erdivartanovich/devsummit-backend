@@ -65,3 +65,20 @@ class HackatonProposalController(BaseController):
 		if result['error']:
 			return BaseController.send_error_api(result['data'], result['message'])
 		return BaseController.send_response_api(result['data'], result['message'])
+
+	@staticmethod
+	def email_certificate(request):
+		email = request.json['email'] if 'email' in request.json else None
+		name = request.json['name'] if 'name' in request.json else None
+		if email and name:
+			payload = {
+				'email': email,
+				'name': name
+			}
+		else:
+			return BaseController.send_error_api(None, 'invalid payload')
+
+		result = hackatonproposalservice.email_certificate(payload)
+		if result['error']:
+			return BaseController.send_error_api(result['data'], result['message'])
+		return BaseController.send_response_api(result['data'], result['message'])

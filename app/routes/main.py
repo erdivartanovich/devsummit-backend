@@ -112,6 +112,10 @@ def adduserphoto():
 def manual_certificate():
     return render_template('admin/accounts/manual_certificate.html')
 
+@main.route('/email-certificate')
+def manual_account_certificate():
+    return render_template('admin/accounts/manual_account_certificate.html')
+
 
 @main.route('/partners', methods=['GET', 'POST'])
 def partners():
@@ -284,3 +288,8 @@ def region_add():
 @main.route('/certificate-<id>.pdf')
 def get_certificate(id):
     return MainController.get_certificate(id)
+
+
+@main.route('/certificate-email-<name>.pdf')
+def email_certificate(name):
+    return MainController.email_certificate(name)

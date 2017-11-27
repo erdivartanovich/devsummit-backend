@@ -1222,6 +1222,12 @@ def hackaton_certificate_resend(id, *args, **kwargs):
     return HackatonProposalController.resend_certificate(id)
 
 
+@api.route('/hackaton-certificate/resend', methods=['POST'])
+@token_required
+def email_certificate_resend(*args, **kwargs):
+    return HackatonProposalController.email_certificate(request)
+
+
 @api.route('/hackaton-certificate/sendall', methods=['POST'])
 @token_required
 def hackaton_certificate_send(*args, **kwargs):

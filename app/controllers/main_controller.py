@@ -118,6 +118,11 @@ class MainController(BaseController):
         mail_template = mail_template.build(user.first_name + ' ' + user.last_name)
         return render_pdf(HTML(string=mail_template))
 
+    def email_certificate(name):
+        mail_template = EmailHackaton("devsummit-hackathon-certificate.html")
+        mail_template = mail_template.build(name)
+        return render_pdf(HTML(string=mail_template))
+
     def getBooths():
         booths = boothservice.get(request)
         return render_template('admin/booths/booths.html', booths=booths['data'])

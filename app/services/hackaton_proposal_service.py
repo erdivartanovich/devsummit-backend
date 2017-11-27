@@ -162,6 +162,17 @@ class HackatonProposalService(BaseService):
 
 		return response.set_data(None).set_message('email has been sent').build()
 
+	def email_certificate(self, payload):
+		response = ResponseBuilder()
+		emailservice = EmailService()
+		mail_template = EmailHackaton("devsummit-hackathon-certificate.html")
+		emailservice = EmailService()
+		extra = "<br/>Link to your downloadable certificate: <a href='https://api.devsummit.io/certificate-email-%s.pdf'>here</a>" %payload['name']
+		template = mail_template.build(payload['name'], extra)
+		email = emailservice.set_recipient(payload['email']).set_subject('Indonesia Developer Summit 2017 Hackathon').set_sender('noreply@devsummit.io').set_html(template).build()
+		mail.send(email)
+		return response.set_data(None).set_message('Email sent').build()
+
 	def transformTimeZone(self, obj):
 		entry = obj
 		created_at_timezoned = datetime.datetime.strptime(entry['created_at'], "%Y-%m-%d %H:%M:%S") + datetime.timedelta(hours=LOCAL_TIME_ZONE)
