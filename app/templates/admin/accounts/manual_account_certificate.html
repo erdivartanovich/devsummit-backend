@@ -1,0 +1,70 @@
+{% extends "admin/base/index.html" %}
+
+{% block title %} <title> Manual Certificate </title>  {% endblock %}
+
+{% block header_link %}
+    <!-- DataTables -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/datatables.net-bs/css/dataTables.bootstrap.min.css') }}">
+{% endblock %}
+
+{% block page_header %}
+<h1>
+        {{ super() }}
+        Certificate
+        <small>Send Certificate to our checked in user.</small>
+    </h1>
+{% endblock %}
+
+{% block breadcrumb %}
+    <li class="active">Notification</li>
+{% endblock %}
+
+{% block content %}
+    <div class="box">
+        <!-- /.box-header -->
+        
+        <div class="box-body">
+            <div class="form-group">
+                <label for="email">User Email:</label>
+                <input type="text" class="form-control email" id="email">
+            </div>
+        </div>
+        <div class="box-body">
+            <div class="form-group">
+                <label for="name">Name</label>
+                <input type="text" class="form-control name" id="name">
+            </div>
+            <button class="btn btn-primary btn-block btn-send">Send</button>
+        </div>
+
+{% endblock %}
+
+{% block footer_link %}
+<!-- DataTables -->
+<script src="{{ url_for('static', filename='assets/datatables.net/js/jquery.dataTables.min.js') }}"></script>
+<script src="{{ url_for('static', filename='assets/datatables.net-bs/js/dataTables.bootstrap.min.js') }}"></script>
+
+<!-- page script -->
+<script>
+
+    $('.btn-send').click(function(event){
+        const email = $('.email').val();
+        const name = $('.name').val();
+        const payload = {
+            email,
+            name
+        }
+        if (confirm('Send Hackaton Certificate?')) {
+            dsa.post('hackaton-certificate/resend', payload, function (result) {
+                if (result.meta.success) {
+                    alert('certificate sent succesfully to ' + email)
+                   window.location = '/email-certificate';
+                } else {
+                    alert(result.meta.message);
+                }
+            });
+        }
+    });
+</script>
+
+{% endblock %}
